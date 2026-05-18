@@ -1,0 +1,4310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionPDF</title>
+<script>
+  // Apply saved theme ASAP to avoid flash of wrong theme
+  (function() {
+    const t = localStorage.getItem('visionpdf_theme');
+    if (t === 'dark')  document.documentElement.classList.add('dark');
+    if (t === 'light') document.documentElement.classList.add('light');
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Palette — light */
+  --bg:          #f4f4f5;
+  --surface:     #ffffff;
+  --surface-2:   #fafafa;
+  --surface-3:   #f1f1f2;
+  --border:      #e4e4e7;
+  --border-2:    #d1d1d6;
+  --text-1:      #09090b;
+  --text-2:      #52525b;
+  --text-3:      #a1a1aa;
+  --accent:      #6366f1;        /* indigo */
+  --accent-dim:  #eef2ff;
+  --accent-fg:   #ffffff;
+  --green:       #16a34a;
+  --green-dim:   #f0fdf4;
+  --amber:       #d97706;
+  --amber-dim:   #fffbeb;
+  --red:         #dc2626;
+  --red-dim:     #fef2f2;
+  --blue:        #2563eb;
+  --blue-dim:    #eff6ff;
+  /* Spacing & shape */
+  --r-sm:  5px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --sidebar-w: 288px;
+  --topbar-h:  48px;
+  /* Type */
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Courier New', monospace;
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-canvas: 0 1px 3px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          #0a0a0b;
+    --surface:     #111113;
+    --surface-2:   #18181b;
+    --surface-3:   #27272a;
+    --border:      #27272a;
+    --border-2:    #3f3f46;
+    --text-1:      #fafafa;
+    --text-2:      #a1a1aa;
+    --text-3:      #52525b;
+    --accent:      #818cf8;
+    --accent-dim:  #1e1b4b;
+    --accent-fg:   #ffffff;
+    --green:       #4ade80;
+    --green-dim:   #052e16;
+    --amber:       #fbbf24;
+    --amber-dim:   #1c1506;
+    --red:         #f87171;
+    --red-dim:     #1f0707;
+    --blue:        #60a5fa;
+    --blue-dim:    #0c1d3f;
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.3);
+    --shadow-md:   0 4px 6px -1px rgba(0,0,0,.4);
+    --shadow-canvas: 0 2px 8px rgba(0,0,0,.5);
+  }
+}
+
+/* Manual dark mode — .dark on <html> wins over media query */
+html.dark :root {
+  --bg:          #0a0a0b;
+  --surface:     #111113;
+  --surface-2:   #18181b;
+  --surface-3:   #27272a;
+  --border:      #27272a;
+  --border-2:    #3f3f46;
+  --text-1:      #fafafa;
+  --text-2:      #a1a1aa;
+  --text-3:      #52525b;
+  --accent:      #818cf8;
+  --accent-dim:  #1e1b4b;
+  --accent-fg:   #ffffff;
+  --green:       #4ade80;
+  --green-dim:   #052e16;
+  --amber:       #fbbf24;
+  --amber-dim:   #1c1506;
+  --red:         #f87171;
+  --red-dim:     #1f0707;
+  --blue:        #60a5fa;
+  --blue-dim:    #0c1d3f;
+  --shadow-sm:   0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:   0 4px 6px -1px rgba(0,0,0,.4);
+  --shadow-canvas: 0 2px 8px rgba(0,0,0,.5);
+}
+/* Manual light mode — .light forces light even if OS is dark */
+html.light :root {
+  --bg:          #f4f4f5;
+  --surface:     #ffffff;
+  --surface-2:   #fafafa;
+  --surface-3:   #f1f1f2;
+  --border:      #e4e4e7;
+  --border-2:    #d1d1d6;
+  --text-1:      #09090b;
+  --text-2:      #52525b;
+  --text-3:      #a1a1aa;
+  --accent:      #6366f1;
+  --accent-dim:  #eef2ff;
+  --accent-fg:   #ffffff;
+  --green:       #16a34a;
+  --green-dim:   #f0fdf4;
+  --amber:       #d97706;
+  --amber-dim:   #fffbeb;
+  --red:         #dc2626;
+  --red-dim:     #fef2f2;
+  --blue:        #2563eb;
+  --blue-dim:    #eff6ff;
+  --shadow-sm:   0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-canvas: 0 1px 3px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.08);
+}
+
+/* ─────────────────────────────
+   Base
+───────────────────────────── */
+html { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text-1);
+  height: 100%;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────
+   App shell
+───────────────────────────── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ─────────────────────────────
+   Sidebar
+───────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+}
+
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+  padding-bottom: 1rem;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Logo */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 1.1rem 1.1rem .9rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 30px; height: 30px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(99,102,241,.3), var(--shadow-sm);
+}
+.logo-mark svg { width: 16px; height: 16px; fill: white; }
+.logo-text h1 { font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: var(--text-1); }
+.logo-text p  { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+/* Sidebar section */
+.sb-section {
+  padding: .9rem 1.1rem .5rem;
+  border-bottom: 1px solid var(--border);
+}
+.sb-section:last-of-type { border-bottom: none; }
+
+.sb-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-3);
+  margin-bottom: .6rem;
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 1.5px dashed var(--border-2);
+  border-radius: var(--r-lg);
+  padding: 1.4rem .75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--surface-2);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.drop-zone input { display: none; }
+.drop-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto .65rem;
+}
+.drop-icon svg { width: 16px; height: 16px; color: var(--text-3); }
+.drop-zone p { font-size: 12px; color: var(--text-2); line-height: 1.4; }
+.drop-zone p strong { color: var(--text-1); font-weight: 500; }
+.drop-zone p.sub { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+/* File card */
+.file-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: .6rem .75rem;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: .5rem;
+  box-shadow: var(--shadow-sm);
+}
+.file-card.visible { display: flex; }
+.file-card-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--red-dim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.file-card-icon svg { width: 14px; height: 14px; color: var(--red); }
+.file-card-meta { flex: 1; min-width: 0; }
+.file-card-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-card-size { font-size: 11px; color: var(--text-3); }
+
+/* Badge */
+.badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 999px;
+  white-space: nowrap; flex-shrink: 0; letter-spacing: .01em;
+}
+.badge-amber { background: var(--amber-dim); color: var(--amber); }
+.badge-green { background: var(--green-dim); color: var(--green); }
+.badge-blue  { background: var(--blue-dim);  color: var(--blue); }
+.badge-red   { background: var(--red-dim);   color: var(--red); }
+.badge-purple { background: #f5f3ff; color: #7c3aed; }
+@media (prefers-color-scheme: dark) {
+  .badge-purple { background: #2e1065; color: #a78bfa; }
+}
+html.dark .badge-purple { background: #2e1065; color: #a78bfa; }
+html.light .badge-purple { background: #f5f3ff; color: #7c3aed; }
+
+/* Config fields */
+.config-grid { display: flex; flex-direction: column; gap: 7px; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.field label {
+  font-size: 10.5px; color: var(--text-2); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.field-full { /* no special treatment needed in column layout */ }
+.check-group { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+.check-row {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11.5px; color: var(--text-2); cursor: pointer; user-select: none;
+}
+.check-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+.check-row:hover span { color: var(--text-1); }
+.field select {
+  font-size: 12px; height: 30px; padding: 0 22px 0 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%23a1a1aa' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: border-color .15s;
+  width: 100%; min-width: 0;
+  text-overflow: ellipsis;
+}
+.field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+/* Alerts */
+.alert {
+  border-radius: var(--r-sm);
+  padding: .5rem .7rem;
+  font-size: 11.5px;
+  display: none;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.45;
+}
+.alert.visible { display: flex; }
+.alert svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; }
+.alert-red    { background: var(--red-dim);   color: var(--red); }
+.alert-amber  { background: var(--amber-dim); color: var(--amber); }
+
+/* Progress */
+.progress-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: .85rem .9rem;
+  display: none; flex-direction: column; gap: 9px;
+  box-shadow: var(--shadow-sm);
+}
+.progress-box.visible { display: flex; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; }
+.progress-label { font-size: 12px; font-weight: 500; color: var(--text-1); }
+.progress-pct   { font-size: 11px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.progress-track { height: 3px; background: var(--border); border-radius: 999px; overflow: hidden; }
+.progress-fill  { height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s ease; width: 0%; }
+.progress-log   { font-size: 10.5px; color: var(--text-3); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.step  { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.step-dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1.5px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); transition: all .25s;
+}
+.step-dot svg { width: 11px; height: 11px; color: var(--text-3); }
+.step-name { font-size: 10px; color: var(--text-3); font-weight: 500; text-align: center; }
+.step.done   .step-dot { background: var(--green-dim);  border-color: transparent; }
+.step.done   .step-dot svg { color: var(--green); }
+.step.done   .step-name { color: var(--green); }
+.step.active .step-dot { background: var(--accent-dim); border-color: var(--accent); }
+.step.active .step-dot svg { color: var(--accent); }
+.step.active .step-name { color: var(--accent); }
+.step.cancelled .step-dot { background: var(--red-dim); border-color: transparent; }
+.step.cancelled .step-dot svg { color: var(--red); }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: .55rem .6rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); }
+.stat-val   { font-size: 18px; font-weight: 700; color: var(--text-1); margin-top: 1px; letter-spacing: -.02em; }
+
+/* Buttons */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 12px; height: 32px; font-size: 12.5px; font-weight: 500;
+  border-radius: var(--r-sm); border: 1px solid var(--border-2);
+  cursor: pointer; transition: all .13s; width: 100%;
+  background: var(--surface-2); color: var(--text-1);
+  font-family: var(--sans); white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-2); }
+.btn:active:not(:disabled) { transform: scale(.98); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.btn-primary {
+  background: var(--accent); color: var(--accent-fg); border-color: transparent;
+  box-shadow: 0 1px 2px rgba(99,102,241,.3), 0 0 0 1px rgba(99,102,241,.15);
+}
+.btn-primary:hover:not(:disabled) { background: #4f52e0; }
+.btn-cancel { background: var(--red-dim); color: var(--red); border-color: transparent; }
+.btn-cancel:hover:not(:disabled) { background: #fee2e2; }
+.btn-dl {
+  background: var(--green-dim); color: var(--green); border-color: transparent;
+  font-size: 12px; font-weight: 600;
+}
+.btn-dl:hover:not(:disabled) { opacity: .85; }
+.btn-row { display: flex; gap: 6px; }
+.btn-row .btn { flex: 1; }
+
+/* Downloads */
+.dl-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+
+/* Range picker */
+.range-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 7px;
+}
+.range-input {
+  flex: 1; min-width: 0;
+  height: 28px; padding: 0 8px; font-size: 12px; font-family: var(--mono);
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-1);
+  transition: border-color .15s;
+}
+.range-input:focus { outline: none; border-color: var(--accent); }
+.range-input::placeholder { color: var(--text-3); font-family: var(--sans); }
+.range-input.error { border-color: var(--red); background: var(--red-dim); }
+.range-all-btn {
+  flex-shrink: 0; height: 28px; padding: 0 8px; font-size: 11px;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s; white-space: nowrap;
+}
+.range-all-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.range-preview {
+  font-size: 10.5px; color: var(--text-3); margin-bottom: 7px;
+  min-height: 14px; line-height: 1.4;
+}
+.range-preview.ok   { color: var(--green); }
+.range-preview.warn { color: var(--amber); }
+.range-preview.err  { color: var(--red); }
+
+/* ─────────────────────────────
+   Sidebar bottom actions
+───────────────────────────── */
+.sb-actions {
+  margin-top: auto;
+  padding: .75rem 1.1rem;
+  display: flex; flex-direction: column; gap: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─────────────────────────────
+   Content area
+───────────────────────────── */
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+/* Topbar */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+  overflow: hidden;   /* prevent horizontal bleed */
+}
+.topbar-sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+.spacer { flex: 1; min-width: 0; }
+
+/* Page nav */
+.page-nav { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.page-nav button {
+  padding: 0 7px; height: 28px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: transparent; cursor: pointer; color: var(--text-2);
+  transition: all .12s; font-family: var(--sans); flex-shrink: 0;
+}
+.page-nav button:hover:not(:disabled) { background: var(--surface-3); color: var(--text-1); }
+.page-nav button:disabled { opacity: .3; cursor: not-allowed; }
+.page-nav .page-all {
+  padding: 0 9px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: transparent; cursor: pointer; color: var(--text-2);
+  transition: all .12s; font-family: var(--sans); height: 28px;
+  margin-left: 4px; white-space: nowrap; flex-shrink: 0;
+}
+.page-nav .page-all:hover { background: var(--surface-3); color: var(--text-1); }
+.page-indicator {
+  font-size: 12px; color: var(--text-2); padding: 0 4px;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+  min-width: 52px; text-align: center; flex-shrink: 0;
+}
+
+/* Segmented control */
+.seg-ctrl {
+  display: flex; gap: 2px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px;
+}
+.seg-btn {
+  padding: 0 10px; height: 24px; font-size: 11.5px; font-weight: 500;
+  border: none; border-radius: 4px; cursor: pointer;
+  color: var(--text-2); background: transparent;
+  transition: all .12s; white-space: nowrap; font-family: var(--sans);
+}
+.seg-btn.active {
+  background: var(--surface); color: var(--text-1);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Search */
+.search-wrap { position: relative; }
+.search-wrap input {
+  width: 176px; padding: 0 8px 0 26px; height: 28px;
+  font-size: 12px; font-family: var(--sans);
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-1);
+  transition: border-color .15s;
+}
+.search-wrap input:focus { outline: none; border-color: var(--accent); }
+.search-wrap input::placeholder { color: var(--text-3); }
+.search-icon { position: absolute; left: 7px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: var(--text-3); pointer-events: none; }
+.search-count { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+
+/* ─────────────────────────────
+   Panels
+───────────────────────────── */
+.panels { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+/* Side-by-side */
+.panel-sbs { flex: 1; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; min-height: 0; }
+.pane { padding: 1.25rem; display: flex; flex-direction: column; gap: 0; min-width: 0; min-height: 0; overflow: hidden; }
+.pane-pdf  {
+  border-right: 1px solid var(--border); background: var(--surface-2);
+  overflow: auto;
+  position: relative;
+}
+.pane-pdf.is-panning { cursor: grabbing !important; user-select: none; }
+.pane-pdf.can-pan    { cursor: grab; }
+.pane-text { background: var(--surface); overflow-y: auto; min-height: 0; }
+
+.pane-header {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 1rem; padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.pane-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+.sync-tag {
+  font-size: 10px; font-weight: 600; padding: 1px 7px;
+  background: var(--accent-dim); color: var(--accent);
+  border-radius: 999px; margin-left: auto;
+}
+
+/* PDF canvas */
+.canvas-wrap {
+  display: flex; flex-direction: column; align-items: flex-start;
+  position: relative;
+  min-width: 100%;
+}
+.canvas-wrap canvas {
+  display: block;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-canvas);
+  transform-origin: top left;
+  transition: transform .12s ease;
+}
+.canvas-page-label {
+  font-size: 10px; font-weight: 600; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: .5rem;
+}
+.canvas-loading { font-size: 12px; color: var(--text-3); }
+
+/* No-PDF overlay shown after session restore */
+.no-pdf-overlay {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 2rem 1rem; text-align: center;
+  border: 1.5px dashed var(--border-2); border-radius: var(--r-lg);
+  background: var(--surface-2); width: 100%;
+}
+.no-pdf-overlay p { font-size: 12px; color: var(--text-2); line-height: 1.5; max-width: 220px; }
+.no-pdf-overlay .no-pdf-icon { color: var(--text-3); }
+.no-pdf-overlay label {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 12px; height: 28px; font-size: 12px; font-weight: 500;
+  background: var(--accent); color: white; border-radius: var(--r-sm);
+  cursor: pointer; border: none; transition: opacity .13s;
+}
+.no-pdf-overlay label:hover { opacity: .87; }
+.no-pdf-overlay label svg { width: 13px; height: 13px; }
+
+/* Zoom controls */
+.zoom-bar {
+  display: none; align-items: center; gap: 4px;
+  padding: 0 8px; height: 26px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); box-shadow: var(--shadow-sm);
+  position: absolute; bottom: 12px; right: 12px; z-index: 10;
+}
+.zoom-bar.visible { display: flex; }
+.zoom-btn {
+  width: 20px; height: 20px; border: none; background: transparent;
+  cursor: pointer; border-radius: 3px; font-size: 14px; line-height: 1;
+  color: var(--text-2); display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.zoom-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.zoom-pct {
+  font-size: 11px; font-weight: 600; color: var(--text-2);
+  min-width: 34px; text-align: center; font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+.zoom-pct:hover { color: var(--text-1); }
+
+.proc-strip-legend {
+  display: none; gap: 10px; margin-top: 5px;
+  font-size: 10px; color: var(--text-3);
+}
+.proc-strip-legend.visible { display: flex; }
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0;
+  display: inline-block; margin-right: 3px;
+}
+.legend-native { background: var(--green); }
+.legend-ocr    { background: var(--amber); }
+.processing-indicator {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: .45rem .7rem;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-top: .5rem;
+}
+.processing-indicator.visible { display: flex; }
+.proc-pulse {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+.proc-page-strip {
+  display: flex; gap: 3px; flex-wrap: wrap;
+  margin-top: .35rem;
+}
+.proc-page-dot {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1px solid var(--border-2);
+  background: var(--surface-3);
+  font-size: 0; transition: background .2s, border-color .2s;
+  cursor: default;
+  position: relative;
+}
+.proc-page-dot.done         { background: var(--green); border-color: var(--green); }
+.proc-page-dot.done.is-ocr  { background: var(--amber); border-color: var(--amber); }
+.proc-page-dot.active       { background: var(--accent); border-color: var(--accent); animation: pulse-dot .8s ease-in-out infinite; }
+.proc-page-dot.pending      { background: var(--surface-3); }
+
+/* Single panel */
+.panel-single { flex: 1; overflow-y: auto; background: var(--surface); }
+.single-inner { max-width: 760px; margin: 0 auto; padding: 1.5rem 2rem; }
+
+/* Page blocks */
+.page-block { margin-bottom: 2.25rem; }
+.page-block:last-child { margin-bottom: 0; }
+.page-block-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: .75rem; padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.pg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
+.pg-meta  { font-size: 11px; color: var(--text-3); }
+.pg-conf  { display: inline-flex; align-items: center; gap: 5px; }
+.conf-track { width: 40px; height: 3px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.conf-fill  { height: 100%; border-radius: 999px; }
+.conf-fill.hi { background: var(--green); }
+.conf-fill.md { background: var(--amber); }
+.conf-fill.lo { background: var(--red); }
+.conf-text { font-size: 10.5px; font-weight: 600; }
+.conf-text.hi { color: var(--green); }
+.conf-text.md { color: var(--amber); }
+.conf-text.lo { color: var(--red); }
+.copy-btn {
+  margin-left: auto;
+  padding: 0 8px; height: 22px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); cursor: pointer; color: var(--text-2);
+  transition: all .13s; font-family: var(--sans); white-space: nowrap;
+}
+.copy-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.copy-btn.ok { background: var(--green-dim); color: var(--green); border-color: transparent; }
+
+/* ── Edit mode ── */
+.btn-edit {
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 10px; height: 28px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  cursor: pointer; transition: all .13s; white-space: nowrap;
+  background: var(--surface-2); color: var(--text-2); font-family: var(--sans);
+}
+.btn-edit svg { width: 13px; height: 13px; flex-shrink: 0; }
+.btn-edit:hover { background: var(--surface-3); color: var(--text-1); }
+.btn-edit.active {
+  background: var(--amber-dim); color: var(--amber);
+  border-color: var(--amber);
+}
+.btn-edit.active:hover { opacity: .85; }
+
+/* Editable text block */
+.page-text[contenteditable="true"] {
+  outline: none;
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  margin: -6px -8px;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--amber);
+  cursor: text;
+  white-space: pre-wrap;
+  caret-color: var(--amber);
+}
+.page-text[contenteditable="true"]:focus {
+  box-shadow: 0 0 0 2px var(--amber), 0 0 0 4px rgba(217,119,6,.15);
+}
+
+/* Modified badge */
+.pg-modified {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--amber-dim); color: var(--amber);
+  border: 1px solid var(--amber);
+  margin-left: 4px;
+}
+
+/* ── Page note ── */
+.note-wrap {
+  margin-top: .6rem;
+  border-top: 1px solid var(--border);
+  padding-top: .5rem;
+}
+.note-toggle {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 500; color: var(--text-3);
+  background: none; border: none; cursor: pointer;
+  font-family: var(--sans); padding: 0; transition: color .12s;
+  user-select: none;
+}
+.note-toggle:hover { color: var(--text-1); }
+.note-toggle svg { width: 11px; height: 11px; transition: transform .15s; }
+.note-toggle.open svg { transform: rotate(90deg); }
+.note-toggle .note-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  display: none;
+}
+.note-toggle.has-note .note-dot { display: block; }
+.note-toggle.has-note { color: var(--accent); }
+.note-body {
+  display: none; margin-top: .4rem;
+}
+.note-body.open { display: block; }
+.note-textarea {
+  width: 100%; min-height: 72px; max-height: 200px;
+  padding: .5rem .6rem; font-size: 12px; line-height: 1.6;
+  font-family: var(--sans); color: var(--text-1);
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  border-radius: var(--r-sm); resize: vertical;
+  transition: border-color .15s; box-sizing: border-box;
+}
+.note-textarea:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.note-textarea::placeholder { color: var(--text-3); }
+.note-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 3px;
+}
+.note-char-count { font-size: 10px; color: var(--text-3); }
+.note-clear-btn {
+  font-size: 10px; color: var(--text-3); background: none; border: none;
+  cursor: pointer; font-family: var(--sans); padding: 0;
+  transition: color .12s; display: none;
+}
+.note-clear-btn:hover { color: var(--red); }
+.note-clear-btn.visible { display: block; }
+
+/* ── Page version history ── */
+.hist-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; padding: 0 7px; font-size: 10px; font-weight: 600;
+  border: 1px solid var(--border-2); border-radius: 3px;
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s;
+  white-space: nowrap;
+}
+.hist-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.hist-btn.has-history { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.hist-btn.has-history:hover { opacity: .82; }
+
+.hist-dropdown { position: relative; display: inline-block; }
+.hist-panel {
+  display: none; position: absolute; top: calc(100% + 5px); left: 0; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-lg);
+  width: 290px; max-height: 300px;
+  flex-direction: column; overflow: hidden;
+}
+.hist-panel.open { display: flex; }
+.hist-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .45rem .65rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.hist-panel-title { font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+.hist-panel-close { background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 14px; padding: 0 2px; line-height: 1; }
+.hist-panel-close:hover { color: var(--text-1); }
+.hist-list { overflow-y: auto; flex: 1; }
+.hist-entry {
+  display: flex; align-items: center; gap: 8px;
+  padding: .4rem .65rem; cursor: default;
+  border-bottom: 1px solid var(--border); transition: background .1s;
+}
+.hist-entry:last-child { border-bottom: none; }
+.hist-entry:hover { background: var(--surface-3); }
+.hist-entry.is-current { background: var(--accent-dim); }
+.hist-entry-icon { font-size: 12px; flex-shrink: 0; color: var(--text-3); }
+.hist-entry.is-original .hist-entry-icon { color: var(--green); }
+.hist-entry.is-current  .hist-entry-icon { color: var(--accent); }
+.hist-entry-meta { flex: 1; min-width: 0; }
+.hist-entry-label { font-size: 11px; font-weight: 600; color: var(--text-1); }
+.hist-entry-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.hist-entry-words { font-size: 10px; color: var(--text-3); flex-shrink: 0; text-align: right; min-width: 40px; }
+.hist-restore-btn {
+  flex-shrink: 0; height: 20px; padding: 0 7px; font-size: 10px; font-weight: 600;
+  border: 1px solid var(--border-2); border-radius: 3px;
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s;
+}
+.hist-restore-btn:hover { background: var(--accent); color: white; border-color: transparent; }
+.hist-entry.is-current .hist-restore-btn { visibility: hidden; }
+
+/* Edit toolbar inside text pane header */
+.edit-hint {
+  font-size: 10.5px; color: var(--amber);
+  display: none; align-items: center; gap: 5px;
+  margin-left: auto;
+}
+.edit-hint.visible { display: flex; }
+
+.page-text {
+  font-size: 13.5px; line-height: 1.85;
+  color: var(--text-1); white-space: pre-wrap; word-break: break-word;
+}
+.page-text.mono { font-family: var(--mono); font-size: 12px; line-height: 1.75; }
+.page-empty { font-size: 13px; color: var(--text-3); font-style: italic; }
+
+/* ── Thumbnail rail ── */
+.thumb-rail {
+  width: 88px; flex-shrink: 0;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  display: none; flex-direction: column;
+  gap: 6px; padding: 8px 6px;
+}
+.thumb-rail.visible { display: flex; }
+.thumb-item {
+  position: relative; cursor: pointer; border-radius: var(--r-sm);
+  border: 2px solid transparent; transition: border-color .15s, box-shadow .15s;
+  background: var(--surface-3); overflow: hidden; flex-shrink: 0;
+}
+.thumb-item:hover { border-color: var(--border-2); }
+.thumb-item.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+.thumb-item canvas { display: block; width: 100%; height: auto; }
+.thumb-pg {
+  position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
+  font-size: 9px; font-weight: 600; color: var(--text-3);
+  background: rgba(255,255,255,.82); padding: 1px 0; pointer-events: none;
+}
+@media (prefers-color-scheme: dark) { .thumb-pg { background: rgba(0,0,0,.65); color: var(--text-2); } }
+html.dark .thumb-pg { background: rgba(0,0,0,.65); color: var(--text-2); }
+html.light .thumb-pg { background: rgba(255,255,255,.82); color: var(--text-3); }
+.thumb-ocr-dot {
+  position: absolute; top: 3px; right: 3px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--amber); border: 1px solid rgba(255,255,255,.5);
+}
+.thumb-placeholder {
+  width: 100%; aspect-ratio: .707;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-3); color: var(--text-3); font-size: 9px;
+}
+
+/* ── Find & Replace bar ── */
+.fnr-bar {
+  display: none; align-items: center; gap: 6px;
+  padding: 5px 10px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; flex-wrap: wrap; row-gap: 4px;
+}
+.fnr-bar.visible { display: flex; }
+.fnr-input {
+  height: 26px; padding: 0 8px; font-size: 12px; font-family: var(--sans);
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-1); width: 150px;
+  transition: border-color .15s;
+}
+.fnr-input:focus { outline: none; border-color: var(--accent); }
+.fnr-input::placeholder { color: var(--text-3); }
+.fnr-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+.fnr-count { font-size: 11px; color: var(--text-3); white-space: nowrap; min-width: 40px; }
+.fnr-btn {
+  height: 24px; padding: 0 9px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-2); cursor: pointer;
+  font-family: var(--sans); transition: all .12s; white-space: nowrap;
+}
+.fnr-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.fnr-btn.primary { background: var(--accent); color: white; border-color: transparent; }
+.fnr-btn.primary:hover { opacity: .88; }
+.fnr-close {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--text-3); font-size: 16px; line-height: 1; padding: 0 2px;
+}
+.fnr-close:hover { color: var(--text-1); }
+.fnr-label { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+mark.fnr-hit { background: #fde68a; color: #1a1916; border-radius: 2px; }
+mark.fnr-hit.current { background: #f97316; color: white; }
+@media (prefers-color-scheme: dark) {
+  mark.fnr-hit { background: #78350f; color: #fef3c7; }
+  mark.fnr-hit.current { background: #c2410c; color: white; }
+}
+html.dark mark.fnr-hit { background: #78350f; color: #fef3c7; }
+html.dark mark.fnr-hit.current { background: #c2410c; color: white; }
+html.light mark.fnr-hit { background: #fde68a; color: #1a1916; }
+html.light mark.fnr-hit.current { background: #f97316; color: white; }
+
+/* ── Confidence table ── */
+.conf-table-wrap { display: none; margin-top: .6rem; }
+.conf-table-wrap.visible { display: block; }
+.conf-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.conf-table th {
+  font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-3);
+  padding: 3px 5px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.conf-table td { padding: 3px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.conf-table tr:last-child td { border-bottom: none; }
+.conf-table tr.row-lo td:first-child { border-left: 2px solid var(--red); }
+.conf-table tr.row-mid td:first-child { border-left: 2px solid var(--amber); }
+.reocr-btn {
+  padding: 1px 7px; height: 18px; font-size: 10px; font-weight: 600;
+  border: 1px solid var(--border-2); border-radius: 3px;
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s;
+}
+.reocr-btn:hover { background: var(--accent); color: white; border-color: transparent; }
+.reocr-btn:disabled { opacity: .35; cursor: not-allowed; }
+.reocr-all-btn {
+  width: 100%; margin-top: 6px; padding: 0 10px; height: 26px;
+  font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-2); cursor: pointer;
+  font-family: var(--sans); transition: all .12s;
+}
+.reocr-all-btn:hover { background: var(--amber-dim); color: var(--amber); border-color: var(--amber); }
+.conf-toggle-btn {
+  font-size: 11px; font-weight: 500; color: var(--accent); cursor: pointer;
+  background: none; border: none; font-family: var(--sans); padding: 4px 0 0;
+  display: none; width: 100%; text-align: left;
+}
+.conf-toggle-btn:hover { opacity: .75; }
+.conf-toggle-btn.visible { display: block; }
+
+/* ── Table of Contents panel ── */
+.toc-panel {
+  width: 220px; flex-shrink: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: none; flex-direction: column;
+  overflow: hidden;
+}
+.toc-panel.visible { display: flex; }
+.toc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .65rem .85rem .5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.toc-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-3);
+}
+.toc-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3); font-size: 15px; line-height: 1;
+  padding: 0 2px; transition: color .12s;
+}
+.toc-close:hover { color: var(--text-1); }
+.toc-search-row {
+  padding: .4rem .6rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.toc-search-row input {
+  width: 100%; height: 24px; padding: 0 7px;
+  font-size: 11.5px; font-family: var(--sans);
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-1);
+}
+.toc-search-row input:focus { outline: none; border-color: var(--accent); }
+.toc-search-row input::placeholder { color: var(--text-3); }
+.toc-body { flex: 1; overflow-y: auto; padding: .3rem 0; }
+.toc-empty {
+  padding: 1.5rem .85rem; font-size: 11.5px; color: var(--text-3);
+  line-height: 1.6; text-align: center;
+}
+.toc-item {
+  display: flex; align-items: baseline;
+  padding: 3px 8px 3px 0; cursor: pointer;
+  transition: background .1s;
+  border-left: 2px solid transparent;
+}
+.toc-item:hover { background: var(--surface-3); }
+.toc-item.active { background: var(--accent-dim); border-left-color: var(--accent); }
+.toc-item.active .toc-item-text { color: var(--accent); font-weight: 600; }
+.toc-item-indent { flex-shrink: 0; }
+.toc-item[data-level="1"] .toc-item-indent { width: 8px; }
+.toc-item[data-level="2"] .toc-item-indent { width: 20px; }
+.toc-item[data-level="3"] .toc-item-indent { width: 32px; }
+.toc-item-bullet {
+  flex-shrink: 0; width: 14px; text-align: center;
+  font-size: 10px; color: var(--text-3); margin-right: 4px;
+}
+.toc-item[data-level="1"] .toc-item-bullet { color: var(--text-2); font-size: 11px; }
+.toc-item-text {
+  font-size: 11.5px; color: var(--text-1); line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
+}
+.toc-item-page {
+  flex-shrink: 0; font-size: 10px; color: var(--text-3);
+  font-variant-numeric: tabular-nums; margin-left: 4px;
+}
+.toc-stats {
+  padding: .35rem .85rem; border-top: 1px solid var(--border);
+  font-size: 10px; color: var(--text-3);
+  flex-shrink: 0; display: flex; gap: 8px;
+}
+.toc-item-text mark { background: #fef08a; color: #1a1916; border-radius: 2px; padding: 0; }
+@media (prefers-color-scheme: dark) { .toc-item-text mark { background: #78350f; color: #fef3c7; } }
+html.dark .toc-item-text mark { background: #78350f; color: #fef3c7; }
+html.light .toc-item-text mark { background: #fef08a; color: #1a1916; }
+@media (max-width: 1100px) { .toc-panel { display: none !important; } }
+
+/* ── Zoom hint in bar ── */
+.zoom-dbl-hint {
+  font-size: 9.5px; color: var(--text-3); white-space: nowrap;
+  padding-left: 5px; border-left: 1px solid var(--border); margin-left: 1px;
+}
+
+mark { background: #fef08a; color: #1a1916; border-radius: 2px; padding: 0 1px; }
+@media (prefers-color-scheme: dark) { mark { background: #713f12; color: #fef3c7; } }
+html.dark mark { background: #713f12; color: #fef3c7; }
+html.light mark { background: #fef08a; color: #1a1916; }
+
+/* ── Project save/load ── */
+.project-row {
+  display: flex; gap: 6px; margin-bottom: 6px;
+}
+.btn-project {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  height: 28px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s;
+}
+.btn-project:hover { background: var(--surface-3); color: var(--text-1); }
+.btn-project.save { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.btn-project.save:hover { opacity: .85; }
+.btn-project svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ── Copy-all button ── */
+.copy-all-btn {
+  width: 100%; height: 26px; margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-2);
+  cursor: pointer; font-family: var(--sans); transition: all .12s;
+}
+.copy-all-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.copy-all-btn.ok { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+
+/* ── PDF-only view mode ── */
+.btn-pdf-only {
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 10px; height: 28px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  cursor: pointer; transition: all .13s; white-space: nowrap;
+  background: var(--surface-2); color: var(--text-2); font-family: var(--sans);
+  flex-shrink: 0;
+}
+.btn-pdf-only svg { width: 13px; height: 13px; flex-shrink: 0; }
+.btn-pdf-only:hover { background: var(--surface-3); color: var(--text-1); }
+.btn-pdf-only.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+.panel-pdf-only {
+  flex: 1; display: none; overflow: auto; position: relative;
+  background: var(--surface-2);
+}
+.panel-pdf-only.visible { display: block; }
+
+/* ── Re-OCR progress ── */
+.reocr-progress {
+  display: none; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--amber); margin-top: 3px;
+}
+.reocr-progress.visible { display: flex; }
+.reocr-progress-bar {
+  flex: 1; height: 3px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.reocr-progress-fill {
+  height: 100%; background: var(--amber);
+  border-radius: 99px; transition: width .2s;
+  width: 0%;
+}
+/* ── Shortcuts modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+  width: 460px; max-width: calc(100vw - 32px);
+  max-height: 80vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .8rem 1rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.modal-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
+.modal-close {
+  background: none; border: none; cursor: pointer; color: var(--text-3);
+  font-size: 20px; line-height: 1; padding: 0 2px; transition: color .12s;
+}
+.modal-close:hover { color: var(--text-1); }
+.modal-body { overflow-y: auto; padding: .85rem 1rem; }
+.shortcut-section { margin-bottom: .9rem; }
+.shortcut-section:last-child { margin-bottom: 0; }
+.shortcut-section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-3); margin-bottom: .4rem;
+}
+.shortcut-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0; border-bottom: 1px solid var(--border); gap: 12px;
+}
+.shortcut-row:last-child { border-bottom: none; }
+.shortcut-desc { font-size: 12px; color: var(--text-2); flex: 1; }
+.shortcut-keys { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.shortcut-keys .k {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 5px;
+  background: var(--surface-3); border: 1px solid var(--border-2);
+  border-radius: 4px; font-size: 10.5px; font-weight: 600;
+  font-family: var(--mono); color: var(--text-2);
+  box-shadow: 0 1px 0 var(--border-2); white-space: nowrap;
+}
+.shortcut-keys .ksep { font-size: 10px; color: var(--text-3); }
+.btn-help {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border-2); background: var(--surface-2);
+  cursor: pointer; color: var(--text-2); font-size: 13px; font-weight: 700;
+  font-family: var(--sans); transition: all .13s; flex-shrink: 0;
+}
+.btn-help:hover { background: var(--surface-3); color: var(--text-1); }
+
+/* ── Word diff badge ── */
+.word-diff {
+  font-size: 9.5px; font-weight: 600; padding: 1px 5px;
+  border-radius: 999px; margin-left: 3px; white-space: nowrap;
+}
+.word-diff.plus  { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+.word-diff.minus { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red); }
+.word-diff.zero  { background: var(--surface-3); color: var(--text-3); border: 1px solid var(--border-2); }
+
+/* ── Drag & drop thumbnails ── */
+.thumb-item.drag-over { border-color: var(--accent) !important; background: var(--accent-dim); }
+.thumb-item.dragging  { opacity: .35; border-style: dashed; }
+.thumb-rail.can-reorder .thumb-item { cursor: grab; }
+.thumb-reorder-hint {
+  font-size: 9.5px; color: var(--text-3); text-align: center;
+  padding: 4px 4px 0; flex-shrink: 0; line-height: 1.4;
+}
+
+.theme-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-2); background: var(--surface-2);
+  cursor: pointer; transition: background .13s, border-color .13s;
+  color: var(--text-2); flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--surface-3); color: var(--text-1); }
+.theme-toggle svg { width: 15px; height: 15px; }
+/* Show sun in dark, moon in light */
+.theme-toggle .icon-sun  { display: none; }
+.theme-toggle .icon-moon { display: block; }
+html.dark  .theme-toggle .icon-sun  { display: block; }
+html.dark  .theme-toggle .icon-moon { display: none; }
+html.light .theme-toggle .icon-sun  { display: none; }
+html.light .theme-toggle .icon-moon { display: block; }
+/* When OS is dark and no manual override: show sun */
+@media (prefers-color-scheme: dark) {
+  html:not(.dark):not(.light) .theme-toggle .icon-sun  { display: block; }
+  html:not(.dark):not(.light) .theme-toggle .icon-moon { display: none; }
+}
+.kbd-hint {
+  font-size: 10px; color: var(--text-3);
+  display: flex; align-items: center; gap: 4px;
+  margin-left: 4px;
+}
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 16px; padding: 0 3px;
+  background: var(--surface-3); border: 1px solid var(--border-2);
+  border-radius: 3px; font-size: 9px; font-weight: 600;
+  font-family: var(--mono); color: var(--text-2);
+  box-shadow: 0 1px 0 var(--border-2);
+}
+
+/* Session restore banner */
+.restore-banner {
+  display: none;
+  align-items: center; gap: 8px;
+  padding: .5rem .7rem;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: var(--r-sm);
+  font-size: 11.5px; color: var(--blue);
+  margin-top: .5rem;
+}
+.restore-banner.visible { display: flex; }
+.restore-banner strong { font-weight: 600; }
+.restore-btn {
+  margin-left: auto; padding: 2px 8px; height: 20px;
+  font-size: 10.5px; font-weight: 600; border-radius: var(--r-sm);
+  border: 1px solid var(--blue); background: var(--blue);
+  color: white; cursor: pointer; font-family: var(--sans);
+  transition: opacity .13s; white-space: nowrap;
+}
+.restore-btn:hover { opacity: .85; }
+.restore-dismiss {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--blue); font-size: 13px; padding: 0 2px; line-height: 1;
+  opacity: .7; transition: opacity .13s;
+}
+.restore-dismiss:hover { opacity: 1; }
+
+.sbs-conf-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: .6rem;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 3rem; text-align: center;
+  background: var(--surface);
+}
+.empty-icon {
+  width: 56px; height: 56px;
+  border-radius: var(--r-lg);
+  background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.empty-icon svg { width: 26px; height: 26px; color: var(--text-3); }
+.empty-state h2 { font-size: 15px; font-weight: 600; color: var(--text-1); }
+.empty-state p  { font-size: 12.5px; color: var(--text-2); max-width: 380px; line-height: 1.6; }
+.empty-tags { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+.empty-tag {
+  font-size: 11px; font-weight: 500; padding: 3px 9px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text-3);
+}
+
+/* ─────────────────────────────
+   Responsive
+───────────────────────────── */
+
+/* Tablet landscape: 900-1200px — sidebar narrower, topbar wraps gracefully */
+@media (max-width: 1200px) {
+  :root { --sidebar-w: 264px; }
+  .stat-val { font-size: 15px; }
+  .search-wrap input { width: 140px; }
+}
+
+/* Tablet portrait: 640-900px — sidebar collapses to icon rail, main content full width */
+@media (max-width: 900px) {
+  :root { --sidebar-w: 100%; --topbar-h: auto; }
+
+  .app { flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* Sidebar becomes a top bar strip */
+  .sidebar {
+    width: 100%; height: auto; flex-direction: row;
+    overflow-x: auto; overflow-y: hidden;
+    border-right: none; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-inner {
+    flex-direction: row; align-items: center;
+    padding: 0 .75rem; gap: 8px; min-width: max-content;
+    padding-bottom: 0; width: 100%;
+  }
+  .sidebar-logo {
+    padding: .6rem .5rem .6rem 0;
+    border-bottom: none; border-right: 1px solid var(--border);
+    margin-right: 4px; flex-shrink: 0;
+  }
+  .logo-text p { display: none; }
+
+  /* Hide heavy sidebar sections — keep only upload + actions */
+  .sb-section { display: none; }
+  .sb-actions {
+    margin-top: 0; border-top: none; padding: .4rem 0;
+    flex-direction: row; gap: 6px; flex-shrink: 0;
+  }
+  .sb-actions .btn { width: auto; min-width: 80px; height: 28px; font-size: 11.5px; padding: 0 10px; }
+
+  /* Show a compact upload trigger */
+  .sidebar-compact-upload {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+
+  .content { flex: 1; overflow: hidden; min-height: 0; }
+  .panels { flex: 1; overflow: hidden; }
+
+  /* SBS: stack vertically, PDF gets 40% height */
+  .panel-sbs {
+    grid-template-columns: 1fr;
+    grid-template-rows: 42vh 1fr;
+    overflow: hidden;
+  }
+  .pane-pdf { border-right: none; border-bottom: 1px solid var(--border); }
+  .pane-text { overflow-y: auto; }
+
+  /* Topbar: allow wrapping, tighten gaps */
+  .topbar {
+    height: auto; min-height: 40px;
+    flex-wrap: wrap; padding: 4px 8px; gap: 4px;
+    row-gap: 4px;
+  }
+  .topbar-sep { display: none; }
+  .spacer { display: none; }
+  .kbd-hint { display: none; }
+  .search-wrap input { width: 120px; }
+  .seg-btn { padding: 0 7px; font-size: 11px; }
+}
+
+/* Mobile: <640px — single column, panels scroll naturally */
+@media (max-width: 640px) {
+  .app { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+  body { overflow: auto; }
+
+  .sidebar {
+    width: 100%; height: auto;
+    overflow-x: auto; overflow-y: hidden;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-inner {
+    flex-direction: row; align-items: center;
+    padding: .5rem .75rem; gap: 8px; min-width: max-content;
+    padding-bottom: .5rem;
+  }
+  .sidebar-logo { padding: 0; border-bottom: none; border-right: 1px solid var(--border); padding-right: 8px; margin-right: 4px; }
+  .logo-text p { display: none; }
+  .sb-section { display: none; }
+  .sb-actions {
+    margin-top: 0; border-top: none; padding: 0;
+    flex-direction: row; gap: 6px;
+  }
+  .sb-actions .btn { width: auto; min-width: 70px; height: 28px; font-size: 11px; padding: 0 8px; }
+
+  .content { height: auto; }
+  .panels { height: auto; display: block; }
+
+  .topbar {
+    height: auto; flex-wrap: wrap; padding: 4px 8px; gap: 4px; row-gap: 4px;
+  }
+  .topbar-sep { display: none; }
+  .spacer { display: none; }
+  .kbd-hint { display: none; }
+  .page-nav button { padding: 0 6px; font-size: 11px; height: 26px; }
+  .page-indicator { min-width: 44px; font-size: 11px; }
+  .seg-btn { padding: 0 7px; font-size: 10.5px; }
+  .btn-edit { font-size: 11px; padding: 0 8px; height: 26px; }
+
+  .panel-sbs { display: flex; flex-direction: column; }
+  .pane-pdf { height: 50vw; min-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+  .pane-text { min-height: 300px; }
+  .pane { padding: .75rem; }
+
+  .panel-single { overflow: visible; }
+  .single-inner { padding: 1rem; }
+
+  .zoom-bar { bottom: 8px; right: 8px; }
+}
+
+/* Topbar overflow fix — all breakpoints */
+.topbar { overflow: visible; }
+.page-nav { flex-shrink: 0; }
+.seg-ctrl  { flex-shrink: 0; }
+.btn-edit  { flex-shrink: 0; }
+.search-wrap { flex-shrink: 1; min-width: 0; }
+.search-wrap input { min-width: 80px; width: 160px; max-width: 100%; }
+
+/* Sidebar fields: prevent overflow */
+.config-grid { gap: 6px; }
+.field select { width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.file-card-name { max-width: 120px; }
+.restore-banner { flex-wrap: wrap; }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══════════════════════════
+     SIDEBAR
+══════════════════════════ -->
+<aside class="sidebar">
+<div class="sidebar-inner">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h3v1.5H8V10z"/></svg>
+    </div>
+    <div class="logo-text">
+      <h1>VisionPDF</h1>
+      <p>OCR &amp; side-by-side preview</p>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="sb-section">
+    <div class="sb-label">Source file</div>
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p><strong>Drop a PDF here</strong> or click to browse</p>
+      <p class="sub">Native text &amp; scanned documents supported</p>
+      <input type="file" id="fileInput" accept=".pdf">
+    </div>
+
+
+    <div class="file-card" id="fileCard">
+      <div class="file-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="file-card-meta">
+        <div class="file-card-name" id="fileCardName">—</div>
+        <div class="file-card-size" id="fileCardSize">—</div>
+      </div>
+      <span class="badge badge-amber" id="pdfTypeBadge" style="display:none">…</span>
+    </div>
+
+    <!-- Session restore banner -->
+    <div class="restore-banner" id="restoreBanner">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13" style="flex-shrink:0"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-2.05-4.95L15 9h5V4l-1.76 1.76A8.97 8.97 0 0 0 13 3z"/></svg>
+      <span><strong id="restoreFileName">—</strong> — <span id="restorePageCount">—</span> pgs</span>
+      <button class="restore-btn" onclick="restoreSession()">Restore</button>
+      <button class="restore-dismiss" onclick="dismissRestore()" title="Dismiss">×</button>
+    </div>
+
+    <!-- Processing page indicator -->
+    <div class="processing-indicator" id="processingIndicator">
+      <span class="proc-pulse"></span>
+      <span id="procLabel">Processing…</span>
+    </div>
+    <div class="proc-page-strip" id="procPageStrip" style="display:none;padding:.3rem 0 0"></div>
+    <div class="proc-strip-legend" id="procStripLegend">
+      <span><span class="legend-dot legend-native"></span>Native</span>
+      <span><span class="legend-dot legend-ocr"></span>OCR</span>
+    </div>
+  </div>
+
+  <!-- OCR Config -->
+  <div class="sb-section">
+    <div class="sb-label">OCR Settings</div>
+    <div class="config-grid">
+      <div class="field">
+        <label>Document language</label>
+        <select id="ocrLang">
+          <option value="spa">Spanish</option>
+          <option value="eng" selected>English</option>
+          <option value="fra">French</option>
+          <option value="deu">German</option>
+          <option value="ita">Italian</option>
+          <option value="por">Portuguese</option>
+          <option value="cat">Catalan</option>
+          <option value="chi_sim">Chinese (Simp.)</option>
+          <option value="jpn">Japanese</option>
+          <option value="ara">Arabic</option>
+          <option value="rus">Russian</option>
+        </select>
+      </div>
+      <div class="field">
+        <label title="Auto-DPI calculates the optimal scale per page to hit 300 DPI">Render quality</label>
+        <select id="renderScale">
+          <option value="auto" selected>Auto-DPI (300 DPI)</option>
+          <option value="1.5">Fast (1.5×)</option>
+          <option value="2">Normal (2×)</option>
+          <option value="3">High (3×)</option>
+          <option value="4">Ultra (4×)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label title="Page segmentation mode — controls how Tesseract analyses the page layout">Page layout (PSM)</label>
+        <select id="ocrPsm">
+          <option value="1" selected>Auto + orientation detect</option>
+          <option value="3">Auto (no OSD)</option>
+          <option value="4">Single column</option>
+          <option value="6">Single block of text</option>
+          <option value="11">Sparse text</option>
+          <option value="13">Raw line</option>
+        </select>
+      </div>
+      <div class="field field-full">
+        <label title="Image filters applied to each page before OCR to improve recognition">Image preprocessing</label>
+        <div class="check-group">
+          <label class="check-row">
+            <input type="checkbox" id="ppContrast" checked>
+            <span>Contrast boost</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="ppSharpen" checked>
+            <span>Sharpen</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="ppBinarize">
+            <span>Binarize (B&amp;W)</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="ppDeskew">
+            <span>Deskew</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error / Partial -->
+  <div class="sb-section" style="padding-top:.5rem;padding-bottom:.5rem">
+    <div class="alert alert-red" id="errorBox">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span id="errorMsg"></span>
+    </div>
+    <div class="alert alert-amber" id="partialNotice" style="margin-top:4px">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span id="partialMsg"></span>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="sb-section" style="padding-top:.5rem">
+    <div class="progress-box" id="progressBox">
+      <div class="progress-header">
+        <span class="progress-label" id="progressLabel">Processing…</span>
+        <span class="progress-pct"   id="progressPct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="steps">
+        <div class="step" id="s-detect">
+          <div class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <div class="step-name">Detect</div>
+        </div>
+        <div class="step" id="s-extract">
+          <div class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div>
+          <div class="step-name">Extract</div>
+        </div>
+        <div class="step" id="s-done">
+          <div class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="step-name">Done</div>
+        </div>
+      </div>
+      <div class="progress-log" id="progressLog">—</div>
+      <button class="btn btn-cancel" id="btnCancel" onclick="cancelProcessing()" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Cancel extraction
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="sb-section" id="statsSection" style="display:none">
+    <div class="sb-label">Results</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Pages</div><div class="stat-val" id="statPages">0</div></div>
+      <div class="stat-card"><div class="stat-label">Words</div><div class="stat-val" id="statWords">0</div></div>
+      <div class="stat-card"><div class="stat-label">Chars</div><div class="stat-val" id="statChars">0</div></div>
+    </div>
+    <button class="conf-toggle-btn" id="confToggleBtn" onclick="toggleConfTable()">▾ OCR confidence by page</button>
+    <div class="conf-table-wrap" id="confTableWrap">
+      <table class="conf-table" id="confTable">
+        <thead><tr><th>Pg</th><th>Confidence</th><th>Type</th><th></th></tr></thead>
+        <tbody id="confTableBody"></tbody>
+      </table>
+      <button class="reocr-all-btn" id="reocrAllBtn" onclick="reOcrLowPages()" style="display:none">
+        ↺ Re-OCR all low-confidence pages
+      </button>
+      <div class="reocr-progress" id="reocrProgress">
+        <span id="reocrProgressLabel">Re-OCR page…</span>
+        <div class="reocr-progress-bar"><div class="reocr-progress-fill" id="reocrProgressFill"></div></div>
+        <span id="reocrProgressPct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Downloads -->
+  <div class="sb-section" id="dlSection" style="display:none">
+    <div class="sb-label">Export</div>
+    <!-- Project save/load -->
+    <div class="project-row">
+      <button class="btn-project save" onclick="saveProject()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save project
+      </button>
+      <button class="btn-project" onclick="$('projectFileInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Load project
+      </button>
+      <input type="file" id="projectFileInput" accept=".visionpdf" style="display:none" onchange="loadProject(this)">
+    </div>
+    <!-- Copy all -->
+    <button class="copy-all-btn" id="copyAllBtn" onclick="copyAll(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy all text
+    </button>
+    <div class="range-row">
+      <input class="range-input" id="rangeInput" placeholder="e.g. 1-3, 5, 8-10"
+             oninput="rangeUpdate()" onfocus="rangeUpdate()">
+      <button class="range-all-btn" onclick="rangeSelectAll()" title="Select all pages">All</button>
+    </div>
+    <div class="range-preview" id="rangePreview"></div>
+    <div class="dl-grid">
+      <button class="btn btn-dl" onclick="downloadAs('txt')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        .TXT
+      </button>
+      <button class="btn btn-dl" onclick="downloadAs('md')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        .MD
+      </button>
+      <button class="btn btn-dl" onclick="downloadAs('json')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        .JSON
+      </button>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="sb-actions">
+    <button class="btn btn-primary" id="btnProcess" onclick="startProcessing()" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Extract text
+    </button>
+    <button class="btn" onclick="resetAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
+      Reset
+    </button>
+  </div>
+
+</div>
+</aside>
+
+<!-- ══════════════════════════
+     CONTENT
+══════════════════════════ -->
+<div class="content">
+
+  <!-- Topbar -->
+  <div class="topbar" id="topbar" style="display:none">
+    <!-- Page nav -->
+    <div class="page-nav">
+      <button onclick="navPage(-10)" id="btnFirst" title="Back 10">«</button>
+      <button onclick="navPage(-1)"  id="btnPrev"  title="Previous">‹</button>
+      <span class="page-indicator"   id="pageIndicator">1 / 1</span>
+      <button onclick="navPage(1)"   id="btnNext"  title="Next">›</button>
+      <button onclick="navPage(10)"  id="btnLast"  title="Forward 10">»</button>
+      <button onclick="showAll()"    id="btnAll" class="page-all">All pages</button>
+      <span class="kbd-hint" id="kbdHint">
+        <span class="kbd">←</span><span class="kbd">→</span>
+      </span>
+    </div>
+
+    <div class="topbar-sep"></div>
+
+    <!-- View toggle -->
+    <div class="seg-ctrl">
+      <button id="vSbs"    class="seg-btn active" onclick="setViewMode('sbs')">
+        ▣ &nbsp;Compare
+      </button>
+      <button id="vSingle" class="seg-btn" onclick="setViewMode('single')">
+        ≡ &nbsp;Text only
+      </button>
+    </div>
+
+    <!-- PDF-only toggle -->
+    <button class="btn-pdf-only" id="btnPdfOnly" onclick="setViewMode('pdf')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>
+        <path d="M9 21V9"/>
+      </svg>
+      PDF only
+    </button>
+
+    <div class="topbar-sep"></div>
+
+    <!-- Edit toggle -->
+    <button class="btn-edit" id="btnEdit" onclick="toggleEditMode()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Edit
+    </button>
+
+    <!-- Find & Replace toggle -->
+    <button class="btn-edit" id="btnFnr" onclick="fnrToggle()" title="Find & Replace (Ctrl+H)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      F&amp;R
+    </button>
+
+    <!-- Thumbnails toggle (SBS only) -->
+    <button class="btn-edit" id="btnThumbs" onclick="toggleThumbs()" title="Page thumbnails" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Thumbs
+    </button>
+
+    <!-- TOC toggle -->
+    <button class="btn-edit" id="btnToc" onclick="tocToggle()" title="Table of contents" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
+      </svg>
+      TOC
+    </button>
+
+    <div class="spacer"></div>
+
+    <!-- Search (text-only mode) -->
+    <div class="search-wrap" id="searchWrap" style="display:none">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search text…" oninput="onSearch()">
+    </div>
+    <span class="search-count" id="searchCount" style="display:none"></span>
+
+    <!-- Font toggle (text-only mode) -->
+    <div class="seg-ctrl" id="fontToggle" style="display:none">
+      <button id="fProp" class="seg-btn active" onclick="setFont('prop')">Sans</button>
+      <button id="fMono" class="seg-btn"        onclick="setFont('mono')">Mono</button>
+    </div>
+
+    <div class="topbar-sep"></div>
+
+    <!-- Theme toggle -->
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+
+    <!-- Help / shortcuts -->
+    <button class="btn-help" onclick="shortcutsOpen()" title="Keyboard shortcuts (?)">?</button>
+  </div>
+
+  <!-- Shortcuts modal -->
+  <div class="modal-overlay" id="shortcutsModal" onclick="if(event.target===this)shortcutsClose()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">⌨ Keyboard shortcuts &amp; tips</span>
+        <button class="modal-close" onclick="shortcutsClose()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">Navigation</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Previous / next page</span><span class="shortcut-keys"><span class="k">←</span><span class="ksep">/</span><span class="k">→</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Also works with</span><span class="shortcut-keys"><span class="k">↑</span><span class="ksep">/</span><span class="k">↓</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">First page</span><span class="shortcut-keys"><span class="k">Home</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Last page</span><span class="shortcut-keys"><span class="k">End</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">Zoom &amp; pan (PDF panel)</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Zoom in / out</span><span class="shortcut-keys"><span class="k">Scroll ↑↓</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Zoom in 2 steps (centred on cursor)</span><span class="shortcut-keys"><span class="k">Dbl-click</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Zoom out 2 steps</span><span class="shortcut-keys"><span class="k">Alt</span><span class="ksep">+</span><span class="k">Dbl-click</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Reset zoom to 100%</span><span class="shortcut-keys"><span class="k">Click %</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Pan when zoomed in</span><span class="shortcut-keys"><span class="k">Drag</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">Tools</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Find &amp; Replace</span><span class="shortcut-keys"><span class="k">Ctrl</span><span class="ksep">+</span><span class="k">H</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">This shortcuts panel</span><span class="shortcut-keys"><span class="k">?</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Close any panel or modal</span><span class="shortcut-keys"><span class="k">Esc</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle dark / light mode</span><span class="shortcut-keys"><span class="k">Click ☀/☾</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">Editing (Edit mode active)</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Undo last change</span><span class="shortcut-keys"><span class="k">Ctrl</span><span class="ksep">+</span><span class="k">Z</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Insert line break</span><span class="shortcut-keys"><span class="k">Enter</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Restore a previous version</span><span class="shortcut-keys"><span class="k">↩ N button</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">Thumbnails</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Navigate to page</span><span class="shortcut-keys"><span class="k">Click thumb</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Reorder pages</span><span class="shortcut-keys"><span class="k">Drag thumb</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-title">File &amp; project tips</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Load PDF</span><span class="shortcut-keys"><span class="k">Drop PDF here</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Save full project (text + notes + history)</span><span class="shortcut-keys"><span class="k">Save project</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Resume work later (no re-OCR needed)</span><span class="shortcut-keys"><span class="k">Load project</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Export selected pages only</span><span class="shortcut-keys"><span class="k">Range: 1-3, 5</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Find & Replace bar -->
+  <div class="fnr-bar" id="fnrBar">
+    <span class="fnr-label">Find</span>
+    <input class="fnr-input" id="fnrFind" placeholder="Search…" oninput="fnrUpdate()">
+    <span class="fnr-count" id="fnrCount"></span>
+    <button class="fnr-btn" onclick="fnrNav(-1)">↑</button>
+    <button class="fnr-btn" onclick="fnrNav(1)">↓</button>
+    <div class="fnr-sep"></div>
+    <span class="fnr-label">Replace</span>
+    <input class="fnr-input" id="fnrReplace" placeholder="Replace with…">
+    <button class="fnr-btn" onclick="fnrReplaceOne()">Replace</button>
+    <button class="fnr-btn primary" onclick="fnrReplaceAll()">All</button>
+    <button class="fnr-close" onclick="fnrClose()" title="Close (Esc)">×</button>
+  </div>
+
+  <!-- Panels -->
+  <div class="panels" id="panels">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <h2>Upload a PDF to get started</h2>
+      <p>Extract text from native PDFs and scanned documents using OCR.<br>
+         Side-by-side view lets you compare the original page with extracted text.</p>
+      <div class="empty-tags">
+        <span class="empty-tag">pdf.js</span>
+        <span class="empty-tag">Tesseract.js OCR</span>
+        <span class="empty-tag">100% in-browser</span>
+        <span class="empty-tag">No server · No limits</span>
+      </div>
+    </div>
+
+    <!-- Side-by-side -->
+    <div class="panel-sbs" id="panelSbs" style="display:none">
+      <!-- Thumbnail rail -->
+      <div class="thumb-rail" id="thumbRail">
+        <div class="thumb-reorder-hint" id="thumbReorderHint" style="display:none">Drag to reorder</div>
+      </div>
+      <div class="pane pane-pdf" id="pdfPane">
+        <div class="pane-header">
+          <span class="pane-title">PDF Preview</span>
+          <span class="sync-tag">⇅ scroll synced</span>
+        </div>
+        <div class="canvas-wrap" id="pdfCanvasWrap">
+          <span class="canvas-loading" id="canvasLoading"></span>
+        </div>
+        <!-- Zoom controls -->
+        <div class="zoom-bar" id="zoomBar">
+          <button class="zoom-btn" onclick="zoomStep(-1)" title="Zoom out (scroll down)">−</button>
+          <span class="zoom-pct" id="zoomPct" onclick="zoomReset()" title="Reset zoom">100%</span>
+          <button class="zoom-btn" onclick="zoomStep(1)"  title="Zoom in (scroll up)">+</button>
+          <span class="zoom-dbl-hint">dbl-click to zoom</span>
+        </div>
+        <!-- Hidden input to reload PDF after restore -->
+        <input type="file" id="pdfReloadInput" accept=".pdf" style="display:none">
+      </div>
+      <div class="pane pane-text" id="textPane">
+        <div class="pane-header">
+          <span class="pane-title">Extracted Text</span>
+          <span class="edit-hint" id="editHint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Click text to edit · Ctrl+Z to undo
+          </span>
+        </div>
+        <div id="textPaneContent"></div>
+      </div>
+    </div>
+
+    <!-- Single text view -->
+    <div class="panel-single" id="panelSingle" style="display:none">
+      <div class="single-inner" id="singleContent"></div>
+    </div>
+
+    <!-- PDF-only view -->
+    <div class="panel-pdf-only" id="panelPdfOnly">
+      <div class="pane pane-pdf" id="pdfPaneOnly" style="height:100%;border:none">
+        <div class="canvas-wrap" id="pdfCanvasWrapOnly" style="padding:1.25rem"></div>
+        <div class="zoom-bar" id="zoomBarOnly">
+          <button class="zoom-btn" onclick="zoomStep(-1)">−</button>
+          <span class="zoom-pct" id="zoomPctOnly" onclick="zoomReset()">100%</span>
+          <button class="zoom-btn" onclick="zoomStep(1)">+</button>
+          <span class="zoom-dbl-hint">dbl-click to zoom</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table of Contents panel -->
+    <div class="toc-panel" id="tocPanel">
+      <div class="toc-header">
+        <span class="toc-title">Contents</span>
+        <button class="toc-close" onclick="tocToggle()" title="Close TOC">×</button>
+      </div>
+      <div class="toc-search-row">
+        <input type="text" id="tocSearch" placeholder="Filter headings…" oninput="tocFilter(this.value)">
+      </div>
+      <div class="toc-body" id="tocBody">
+        <div class="toc-empty">Extract text to generate table of contents.</div>
+      </div>
+      <div class="toc-stats" id="tocStats"></div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<script>
+'use strict';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ──
+let pdfFile      = null;
+let pdfDoc       = null;
+let pagesText    = [];
+let isOCR        = false;
+let isProcessing = false;
+let cancelFlag   = false;
+let viewMode     = 'sbs';
+let fontMode     = 'prop';
+let currentPage  = 0;
+let showingAll   = false;
+let scrollLocked = false;
+let editMode     = false;
+let zoomLevel    = 1.0;   // current zoom multiplier (1 = fit-to-pane)
+
+const $ = id => document.getElementById(id);
+
+// ── Zoom + Pan ──
+const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0];
+let zoomListenerAttached = false;
+let panState = null;  // { startX, startY, scrollLeft, scrollTop }
+
+function zoomStep(dir) {
+  const idx = ZOOM_STEPS.findIndex(z => z >= zoomLevel - 0.001);
+  const cur  = idx < 0 ? ZOOM_STEPS.length - 1 : idx;
+  const next = dir > 0
+    ? Math.min(ZOOM_STEPS.length - 1, cur + 1)
+    : Math.max(0, cur - 1);
+  applyZoom(ZOOM_STEPS[next]);
+}
+
+function zoomReset() { applyZoom(1.0); }
+
+function applyZoom(z, focalX, focalY) {
+  const pane   = $('pdfPane');
+  const canvas = $('pdfCanvasWrap')?.querySelector('canvas');
+  if (!canvas) { zoomLevel = z; $('zoomPct').textContent = Math.round(z * 100) + '%'; return; }
+
+  // Focal point in content coordinates (before zoom change)
+  const fx = focalX ?? (pane.scrollLeft + pane.clientWidth  / 2);
+  const fy = focalY ?? (pane.scrollTop  + pane.clientHeight / 2);
+  const ratioX = fx / (canvas.offsetWidth  * zoomLevel);
+  const ratioY = fy / (canvas.offsetHeight * zoomLevel);
+
+  zoomLevel = z;
+  $('zoomPct').textContent = Math.round(z * 100) + '%';
+  if ($('zoomPctOnly')) $('zoomPctOnly').textContent = Math.round(z * 100) + '%';
+
+  canvas.style.transform = `scale(${z})`;
+
+  // Update spacer so scroll area reflects actual zoomed size
+  const spacer = $('canvasSpacer');
+  if (spacer) {
+    spacer.style.width  = Math.round(canvas.offsetWidth  * z) + 'px';
+    spacer.style.height = Math.round(canvas.offsetHeight * z) + 'px';
+  }
+
+  // Re-center scroll on same content point
+  requestAnimationFrame(() => {
+    pane.scrollLeft = ratioX * canvas.offsetWidth  * z - pane.clientWidth  / 2;
+    pane.scrollTop  = ratioY * canvas.offsetHeight * z - pane.clientHeight / 2;
+    updatePanCursor();
+  });
+
+  $('zoomBar').classList.add('visible');
+}
+
+function updatePanCursor() {
+  const pane = $('pdfPane');
+  if (!pane) return;
+  const canPan = zoomLevel > 1.0;
+  pane.classList.toggle('can-pan',  canPan && !panState);
+  pane.classList.toggle('is-panning', !!panState);
+  if (!canPan) pane.classList.remove('can-pan', 'is-panning');
+}
+
+function setupCanvasZoom(pane, wrap) {
+  if (zoomListenerAttached) return;
+  zoomListenerAttached = true;
+
+  // Wheel → zoom toward mouse
+  wrap.addEventListener('wheel', e => {
+    if (!wrap.querySelector('canvas')) return;
+    e.preventDefault();
+    const rect   = $('pdfPane').getBoundingClientRect();
+    const focalX = e.clientX - rect.left + $('pdfPane').scrollLeft;
+    const focalY = e.clientY - rect.top  + $('pdfPane').scrollTop;
+    const idx  = ZOOM_STEPS.findIndex(z => z >= zoomLevel - 0.001);
+    const cur  = idx < 0 ? ZOOM_STEPS.length - 1 : idx;
+    const next = e.deltaY < 0
+      ? Math.min(ZOOM_STEPS.length - 1, cur + 1)
+      : Math.max(0, cur - 1);
+    applyZoom(ZOOM_STEPS[next], focalX, focalY);
+  }, { passive: false });
+
+  // Double-click → zoom in (Alt+dblclick → zoom out)
+  wrap.addEventListener('dblclick', e => {
+    if (!wrap.querySelector('canvas')) return;
+    e.preventDefault();
+    const rect   = $('pdfPane').getBoundingClientRect();
+    const focalX = e.clientX - rect.left + $('pdfPane').scrollLeft;
+    const focalY = e.clientY - rect.top  + $('pdfPane').scrollTop;
+    const idx  = ZOOM_STEPS.findIndex(z => z >= zoomLevel - 0.001);
+    const cur  = idx < 0 ? ZOOM_STEPS.length - 1 : idx;
+    const next = e.altKey
+      ? Math.max(0, cur - 2)
+      : Math.min(ZOOM_STEPS.length - 1, cur + 2);  // jump 2 steps on dblclick
+    applyZoom(ZOOM_STEPS[next], focalX, focalY);
+  });
+
+  // Mouse drag → pan
+  pane.addEventListener('mousedown', e => {
+    if (zoomLevel <= 1.0) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    panState = { startX: e.clientX, startY: e.clientY,
+                 scrollLeft: pane.scrollLeft, scrollTop: pane.scrollTop };
+    pane.classList.add('is-panning');
+    pane.classList.remove('can-pan');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!panState) return;
+    const dx = e.clientX - panState.startX;
+    const dy = e.clientY - panState.startY;
+    pane.scrollLeft = panState.scrollLeft - dx;
+    pane.scrollTop  = panState.scrollTop  - dy;
+  });
+  window.addEventListener('mouseup', () => {
+    if (!panState) return;
+    panState = null;
+    updatePanCursor();
+  });
+}
+
+// ── PDF reload after session restore ──
+const pdfReloadInput = document.createElement('input');
+pdfReloadInput.type = 'file'; pdfReloadInput.accept = '.pdf';
+pdfReloadInput.style.display = 'none';
+document.body.appendChild(pdfReloadInput);
+pdfReloadInput.addEventListener('change', async () => {
+  if (!pdfReloadInput.files[0]) return;
+  const file = pdfReloadInput.files[0];
+  pdfFile = file;
+  try {
+    const ab = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+    // Re-render current view now that we have the PDF
+    applyViewMode();
+    $('fileCardName').textContent = file.name;
+    $('fileCardSize').textContent = formatBytes(file.size);
+  } catch(e) { showError('Could not load PDF: ' + e.message); }
+});
+
+// ══════════════════════════════════════════════
+// THUMBNAILS
+// ══════════════════════════════════════════════
+let thumbsVisible = false;
+let thumbsRendered = false;
+
+function toggleThumbs() {
+  thumbsVisible = !thumbsVisible;
+  $('thumbRail').classList.toggle('visible', thumbsVisible);
+  $('btnThumbs').classList.toggle('active', thumbsVisible);
+  if (thumbsVisible && !thumbsRendered) renderAllThumbs();
+}
+
+async function renderAllThumbs() {
+  if (!pdfDoc) return;
+  thumbsRendered = true;
+  const rail = $('thumbRail');
+  // Keep the hint, clear the rest
+  const hint = $('thumbReorderHint');
+  rail.innerHTML = '';
+  if (hint) rail.appendChild(hint);
+  const nPages = pdfDoc.numPages;
+  for (let i = 1; i <= nPages; i++) {
+    const item = document.createElement('div');
+    item.className = 'thumb-item' + (i - 1 === currentPage ? ' active' : '');
+    item.dataset.pgIdx = i - 1;
+    item.innerHTML = `<div class="thumb-placeholder">${i}</div>`;
+    item.onclick = () => { if (!showingAll) navToPage(parseInt(item.dataset.pgIdx)); };
+    rail.appendChild(item);
+    // OCR dot
+    if (pagesText[i-1]?.isOCR) {
+      const dot = document.createElement('div');
+      dot.className = 'thumb-ocr-dot'; dot.title = 'OCR page';
+      item.appendChild(dot);
+    }
+    // Page label
+    const lbl = document.createElement('div');
+    lbl.className = 'thumb-pg'; lbl.textContent = i;
+    item.appendChild(lbl);
+    // Render async without blocking
+    renderThumb(i, item);
+  }
+  // Setup drag & drop after all items are in DOM
+  setupThumbDragDrop(rail);
+}
+
+async function renderThumb(pageNum, item) {
+  if (!pdfDoc) return;
+  try {
+    const page = await pdfDoc.getPage(pageNum);
+    const vp = page.getViewport({ scale: 0.18 });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    const placeholder = item.querySelector('.thumb-placeholder');
+    if (placeholder) placeholder.replaceWith(canvas);
+  } catch(e) {}
+}
+
+function updateThumbActive(idx) {
+  $('thumbRail').querySelectorAll('.thumb-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  // Scroll thumb into view
+  const active = $('thumbRail').querySelector('.thumb-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function navToPage(idx) {
+  if (idx < 0 || idx >= pagesText.length) return;
+  currentPage = idx;
+  applyViewMode();
+}
+
+// ══════════════════════════════════════════════
+// FIND & REPLACE
+// ══════════════════════════════════════════════
+let fnrHits = [];   // [{pageIdx, node, start, end}]
+let fnrCurrent = -1;
+
+function fnrToggle() {
+  const bar = $('fnrBar');
+  const open = !bar.classList.contains('visible');
+  bar.classList.toggle('visible', open);
+  $('btnFnr').classList.toggle('active', open);
+  if (open) { $('fnrFind').focus(); $('fnrFind').select(); }
+  else fnrClear();
+}
+
+function fnrClose() {
+  $('fnrBar').classList.remove('visible');
+  $('btnFnr').classList.remove('active');
+  fnrClear();
+}
+
+function fnrClear() {
+  // Remove all highlights from DOM
+  document.querySelectorAll('mark.fnr-hit').forEach(m => {
+    m.replaceWith(document.createTextNode(m.textContent));
+  });
+  fnrHits = []; fnrCurrent = -1;
+  $('fnrCount').textContent = '';
+}
+
+function fnrUpdate() {
+  fnrClear();
+  const q = $('fnrFind').value;
+  if (!q) return;
+  // Highlight in all visible .page-text elements
+  const els = document.querySelectorAll('.page-text');
+  let total = 0;
+  els.forEach(el => {
+    const pageIdx = parseInt(el.dataset.idx ?? -1);
+    highlightInNode(el, q, pageIdx);
+  });
+  fnrHits = Array.from(document.querySelectorAll('mark.fnr-hit'));
+  total = fnrHits.length;
+  $('fnrCount').textContent = total ? `1/${total}` : '0';
+  if (total) { fnrCurrent = 0; fnrScrollTo(0); }
+}
+
+function highlightInNode(root, query, pageIdx) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  const re = new RegExp(escapeRegex(query), 'gi');
+  nodes.forEach(node => {
+    const text = node.textContent;
+    let match, last = 0;
+    const frag = document.createDocumentFragment();
+    let found = false;
+    while ((match = re.exec(text)) !== null) {
+      found = true;
+      if (match.index > last) frag.appendChild(document.createTextNode(text.slice(last, match.index)));
+      const mark = document.createElement('mark');
+      mark.className = 'fnr-hit';
+      mark.textContent = match[0];
+      mark.dataset.pageIdx = pageIdx;
+      frag.appendChild(mark);
+      last = match.index + match[0].length;
+    }
+    if (found) {
+      frag.appendChild(document.createTextNode(text.slice(last)));
+      node.replaceWith(frag);
+    }
+  });
+}
+
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function fnrNav(dir) {
+  if (!fnrHits.length) return;
+  fnrHits[fnrCurrent]?.classList.remove('current');
+  fnrCurrent = (fnrCurrent + dir + fnrHits.length) % fnrHits.length;
+  fnrScrollTo(fnrCurrent);
+  $('fnrCount').textContent = `${fnrCurrent + 1}/${fnrHits.length}`;
+}
+
+function fnrScrollTo(idx) {
+  const hit = fnrHits[idx];
+  if (!hit) return;
+  hit.classList.add('current');
+  hit.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function fnrReplaceOne() {
+  if (fnrCurrent < 0 || !fnrHits.length) return;
+  const hit = fnrHits[fnrCurrent];
+  const replaceWith = $('fnrReplace').value;
+  const pageIdx = parseInt(hit.dataset.pageIdx ?? -1);
+  hit.replaceWith(document.createTextNode(replaceWith));
+  fnrHits.splice(fnrCurrent, 1);
+  // Sync back to pagesText
+  if (pageIdx >= 0) syncPageText(pageIdx);
+  if (fnrCurrent >= fnrHits.length) fnrCurrent = fnrHits.length - 1;
+  $('fnrCount').textContent = fnrHits.length ? `${fnrCurrent + 1}/${fnrHits.length}` : '0';
+  if (fnrHits[fnrCurrent]) fnrHits[fnrCurrent].classList.add('current');
+}
+
+function fnrReplaceAll() {
+  const replaceWith = $('fnrReplace').value;
+  const affectedPages = new Set();
+  [...fnrHits].forEach(hit => {
+    affectedPages.add(parseInt(hit.dataset.pageIdx ?? -1));
+    hit.replaceWith(document.createTextNode(replaceWith));
+  });
+  fnrHits = []; fnrCurrent = -1;
+  $('fnrCount').textContent = '0';
+  affectedPages.forEach(idx => { if (idx >= 0) syncPageText(idx); });
+}
+
+// Sync a contenteditable or rendered page-text div back to pagesText
+function syncPageText(pageIdx) {
+  const el = document.querySelector(`.page-text[data-idx="${pageIdx}"]`);
+  if (!el) return;
+  const newText = el.innerText;
+  if (pagesText[pageIdx]) {
+    pagesText[pageIdx].text = newText;
+    pagesText[pageIdx].charCount = newText.length;
+    pagesText[pageIdx].wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
+    markPageModified(pageIdx);
+    scheduleSessionSave();
+  }
+}
+
+// ══════════════════════════════════════════════
+// CONFIDENCE TABLE + RE-OCR
+// ══════════════════════════════════════════════
+function buildConfTable() {
+  const ocrPages = pagesText.filter(p => p.isOCR);
+  const btn = $('confToggleBtn');
+  if (!ocrPages.length) { btn.classList.remove('visible'); return; }
+  btn.classList.add('visible');
+
+  const body = $('confTableBody');
+  body.innerHTML = '';
+  let hasLow = false;
+
+  ocrPages.forEach(p => {
+    const conf = p.confidence ?? 0;
+    const cls  = conf < 60 ? 'row-lo' : conf < 80 ? 'row-mid' : '';
+    const bar  = conf < 60 ? 'lo' : conf < 80 ? 'md' : 'hi';
+    if (cls === 'row-lo') hasLow = true;
+    body.insertAdjacentHTML('beforeend', `
+      <tr class="${cls}">
+        <td>${p.page}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="conf-track" style="width:36px">
+              <div class="conf-fill ${bar}" style="width:${conf}%"></div>
+            </div>
+            <span class="conf-text ${bar}">${conf}%</span>
+          </div>
+        </td>
+        <td style="color:var(--amber);font-size:10px">OCR</td>
+        <td><button class="reocr-btn" onclick="reOcrPage(${p.page - 1}, this)">↺</button></td>
+      </tr>`);
+  });
+
+  $('reocrAllBtn').style.display = hasLow ? 'block' : 'none';
+}
+
+function toggleConfTable() {
+  const wrap = $('confTableWrap');
+  const open = !wrap.classList.contains('visible');
+  wrap.classList.toggle('visible', open);
+  $('confToggleBtn').textContent = (open ? '▴' : '▾') + ' OCR confidence by page';
+}
+
+async function reOcrPage(pageIdx, btn) {
+  if (!pdfDoc) return;
+  btn.disabled = true; btn.textContent = '…';
+  setReocrProgress(true, `Re-OCR page ${pageIdx + 1}…`, 10);
+  try {
+    const lang = $('ocrLang').value;
+    const tmpWorker = await Tesseract.createWorker(lang, 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(10 + m.progress * 85);
+          setReocrProgress(true, `Re-OCR page ${pageIdx + 1}… ${Math.round(m.progress*100)}%`, pct);
+        }
+      }
+    });
+    await tmpWorker.setParameters(buildTesseractParams()).catch(() => {});
+    setReocrProgress(true, `Rendering page ${pageIdx + 1}…`, 8);
+    const page  = await pdfDoc.getPage(pageIdx + 1);
+    const scale = await getPageScale(page);
+    const vp    = page.getViewport({ scale });
+    const rawCanvas = document.createElement('canvas');
+    rawCanvas.width = Math.round(vp.width); rawCanvas.height = Math.round(vp.height);
+    await page.render({ canvasContext: rawCanvas.getContext('2d'), viewport: vp }).promise;
+    const proc = preprocessCanvas(rawCanvas);
+    const blob = await new Promise(r => proc.toBlob(r, 'image/png'));
+    const { data } = await tmpWorker.recognize(blob);
+    await tmpWorker.terminate();
+    pagesText[pageIdx].text       = data.text.trim();
+    pagesText[pageIdx].confidence = Math.round(data.confidence);
+    pagesText[pageIdx].charCount  = pagesText[pageIdx].text.length;
+    pagesText[pageIdx].wordCount  = pagesText[pageIdx].text.trim().split(/\s+/).filter(Boolean).length;
+    markPageModified(pageIdx);
+    scheduleSessionSave();
+    setReocrProgress(true, `Done — ${Math.round(data.confidence)}% confidence`, 100);
+    setTimeout(() => setReocrProgress(false), 1200);
+    buildConfTable();
+    if (!showingAll && currentPage === pageIdx) applyViewMode();
+    btn.textContent = '✓'; btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = '↺'; btn.style.color = ''; btn.disabled = false; }, 1500);
+  } catch(e) {
+    setReocrProgress(false);
+    btn.textContent = '!'; btn.disabled = false;
+  }
+}
+
+async function reOcrLowPages() {
+  const lowPages = pagesText
+    .map((p, i) => ({ ...p, idx: i }))
+    .filter(p => p.isOCR && (p.confidence ?? 0) < 60);
+  for (let i = 0; i < lowPages.length; i++) {
+    const p = lowPages[i];
+    const rowBtns = $('confTableBody')?.querySelectorAll('.reocr-btn');
+    const btn = rowBtns?.[i] || document.createElement('button');
+    setReocrProgress(true, `Re-OCR page ${p.page} (${i+1}/${lowPages.length})…`,
+      Math.round((i / lowPages.length) * 100));
+    await reOcrPage(p.idx, btn);
+  }
+  setReocrProgress(false);
+}
+
+// ══════════════════════════════════════════════
+// TABLE OF CONTENTS
+// ══════════════════════════════════════════════
+let tocVisible  = false;
+let tocEntries  = [];   // [{text, level, pageIdx, lineIdx}]
+let tocActive   = -1;
+
+// ── Heading detection heuristics ──
+// A line is a heading candidate if it matches any of these patterns.
+// Returns level 1/2/3 or 0 (not a heading).
+function detectHeadingLevel(line, allLines) {
+  const t = line.trim();
+  if (!t || t.length > 120) return 0;       // too long to be a heading
+  if (t.length < 2) return 0;
+
+  // Pattern 1 — numbered sections: "1.", "1.1", "1.1.1", "Chapter 3", "Section 2.4"
+  if (/^(chapter|section|part|appendix)\s+[\divxlc]+/i.test(t)) return 1;
+  if (/^\d+\.\s+\S/.test(t) && t.length < 80) return 1;
+  if (/^\d+\.\d+\.?\s+\S/.test(t) && t.length < 80) return 2;
+  if (/^\d+\.\d+\.\d+\.?\s+\S/.test(t) && t.length < 80) return 3;
+
+  // Pattern 2 — Roman numerals: "I.", "II.", "III."
+  if (/^(I{1,3}|IV|V?I{0,3}|IX|X{1,3})\.\s+\S/i.test(t) && t.length < 80) return 1;
+
+  // Pattern 3 — ALL CAPS short line (title-like)
+  if (t === t.toUpperCase() && /[A-Z]/.test(t) && t.length >= 3 && t.length <= 60
+      && !/^\d+$/.test(t)) return 1;
+
+  // Pattern 4 — Title Case: most words capitalized, short line, no sentence punctuation
+  const words = t.split(/\s+/);
+  if (words.length >= 2 && words.length <= 10 && t.length <= 70
+      && !t.endsWith('.') && !t.endsWith(',') && !t.endsWith(';')
+      && words.filter(w => w.length > 3 && w[0] === w[0].toUpperCase() && /[a-zA-Z]/.test(w[0])).length / words.length >= 0.6) {
+    // Avoid false positives: must not look like a regular sentence start
+    const nextLine = allLines[allLines.indexOf(line) + 1] || '';
+    if (nextLine.trim().length > 40) return 2;  // followed by body text → likely a heading
+  }
+
+  // Pattern 5 — line followed by blank line and preceded by blank line (isolated line)
+  const idx = allLines.indexOf(line);
+  const prev = (allLines[idx - 1] || '').trim();
+  const next = (allLines[idx + 1] || '').trim();
+  if (!prev && !next && t.length >= 4 && t.length <= 70
+      && !t.endsWith('.')) return 2;
+
+  return 0;
+}
+
+function buildToc() {
+  if (!pagesText.length) return;
+  tocEntries = [];
+
+  pagesText.forEach((p, pageIdx) => {
+    if (!p.text) return;
+    const lines = p.text.split('\n');
+    lines.forEach((line, lineIdx) => {
+      const level = detectHeadingLevel(line, lines);
+      if (level) {
+        tocEntries.push({
+          text: line.trim(),
+          level,
+          pageIdx,
+          lineIdx
+        });
+      }
+    });
+  });
+
+  renderToc(tocEntries);
+  updateTocActive(currentPage);
+}
+
+function renderToc(entries, filterQ = '') {
+  const body = $('tocBody');
+  const stats = $('tocStats');
+
+  if (!entries.length) {
+    body.innerHTML = `<div class="toc-empty">No headings detected.<br><span style="font-size:10.5px">VisionPDF looks for numbered sections, ALL CAPS titles, and title-case lines.</span></div>`;
+    stats.textContent = '';
+    return;
+  }
+
+  const q = filterQ.toLowerCase().trim();
+
+  const html = entries.map((e, i) => {
+    if (q && !e.text.toLowerCase().includes(q)) return '';
+    const textHtml = q
+      ? e.text.replace(new RegExp(`(${escapeRegex(filterQ)})`, 'gi'), '<mark>$1</mark>')
+      : escapeHtml(e.text);
+    const bullet = e.level === 1 ? '◆' : e.level === 2 ? '◇' : '·';
+    return `<div class="toc-item" data-level="${e.level}" data-idx="${i}" onclick="tocGoto(${i})">
+      <div class="toc-item-indent"></div>
+      <span class="toc-item-bullet">${bullet}</span>
+      <span class="toc-item-text" title="${escapeHtml(e.text)}">${textHtml}</span>
+      <span class="toc-item-page">${e.pageIdx + 1}</span>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = html || `<div class="toc-empty">No matches for "${escapeHtml(filterQ)}".</div>`;
+
+  const l1 = entries.filter(e => e.level === 1).length;
+  const l2 = entries.filter(e => e.level === 2).length;
+  const l3 = entries.filter(e => e.level === 3).length;
+  stats.innerHTML = `<span>${entries.length} headings</span>`
+    + (l1 ? `<span>H1: ${l1}</span>` : '')
+    + (l2 ? `<span>H2: ${l2}</span>` : '')
+    + (l3 ? `<span>H3: ${l3}</span>` : '');
+}
+
+function tocFilter(q) {
+  renderToc(tocEntries, q);
+}
+
+function tocGoto(idx) {
+  const e = tocEntries[idx];
+  if (!e) return;
+  tocActive = idx;
+  // Navigate to page
+  if (viewMode === 'sbs') {
+    if (showingAll || currentPage !== e.pageIdx) {
+      showingAll = false;
+      currentPage = e.pageIdx;
+      applyViewMode();
+    }
+  } else {
+    if (showingAll || currentPage !== e.pageIdx) {
+      showingAll = false;
+      currentPage = e.pageIdx;
+      applyViewMode();
+    }
+    // Scroll to the heading in single view
+    setTimeout(() => scrollToHeading(e.text), 80);
+  }
+  updateTocActive(e.pageIdx);
+  // Highlight active item
+  $('tocBody').querySelectorAll('.toc-item').forEach(el => el.classList.remove('active'));
+  const activeEl = $('tocBody').querySelector(`.toc-item[data-idx="${idx}"]`);
+  if (activeEl) { activeEl.classList.add('active'); activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+}
+
+function scrollToHeading(text) {
+  const els = document.querySelectorAll('.page-text');
+  for (const el of els) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.textContent.includes(text.slice(0, 40))) {
+        node.parentElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        return;
+      }
+    }
+  }
+}
+
+function updateTocActive(pageIdx) {
+  // Find last heading on or before current page
+  let bestIdx = -1;
+  tocEntries.forEach((e, i) => { if (e.pageIdx <= pageIdx) bestIdx = i; });
+  $('tocBody').querySelectorAll('.toc-item').forEach(el => el.classList.remove('active'));
+  if (bestIdx >= 0) {
+    const el = $('tocBody').querySelector(`.toc-item[data-idx="${bestIdx}"]`);
+    if (el) el.classList.add('active');
+  }
+}
+
+function tocToggle() {
+  tocVisible = !tocVisible;
+  $('tocPanel').classList.toggle('visible', tocVisible);
+  $('btnToc').classList.toggle('active', tocVisible);
+  if (tocVisible && !tocEntries.length) buildToc();
+}
+
+// Re-acquire wake lock if released by system (e.g. screen timeout on mobile)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && isProcessing) {
+    try {
+      if ('wakeLock' in navigator) await navigator.wakeLock.request('screen');
+    } catch(_) {}
+  }
+});
+
+// ── Theme toggle ──
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.classList.contains('dark') ||
+    (!html.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  html.classList.remove('dark', 'light');
+  if (isDark) {
+    html.classList.add('light');
+    localStorage.setItem('visionpdf_theme', 'light');
+  } else {
+    html.classList.add('dark');
+    localStorage.setItem('visionpdf_theme', 'dark');
+  }
+}
+
+// ══════════════════════════════════════════════
+// PROJECT SAVE / LOAD  (.visionpdf)
+// ══════════════════════════════════════════════
+const PROJECT_VERSION = 1;
+
+async function saveProject() {
+  if (!pagesText.length) return;
+  const histObj = {};
+  pageHistory.forEach((v, k) => { histObj[k] = v; });
+
+  // Try to embed PDF as base64 (warn if >10MB)
+  let pdfBase64 = null;
+  if (pdfFile) {
+    try {
+      const ab = await pdfFile.arrayBuffer();
+      const sizeMB = ab.byteLength / 1024 / 1024;
+      if (sizeMB <= 15) {
+        const bytes = new Uint8Array(ab);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        pdfBase64 = btoa(binary);
+        if (sizeMB > 5) log(`Note: PDF embedded (${sizeMB.toFixed(1)} MB) — project file will be large`);
+      } else {
+        log(`PDF too large to embed (${sizeMB.toFixed(1)} MB) — text and notes saved, PDF not included`);
+      }
+    } catch(e) { /* skip silently */ }
+  }
+
+  const project = {
+    _visionpdf: PROJECT_VERSION,
+    savedAt: new Date().toISOString(),
+    fileName: pdfFile?.name || 'document',
+    viewMode, fontMode, currentPage, isOCR,
+    pagesText,
+    pageHistory: histObj,
+    modifiedPages: [...modifiedPages],
+    noteOpenPages: [...noteOpenPages],
+    pdfBase64: pdfBase64 || null,
+  };
+  const blob = new Blob([JSON.stringify(project)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (pdfFile?.name.replace(/\.pdf$/i,'') || 'project') + '.visionpdf';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function loadProject(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data._visionpdf || !data.pagesText?.length) {
+        showError('Not a valid .visionpdf file.'); return;
+      }
+      // Restore state
+      pagesText   = data.pagesText;
+      viewMode    = data.viewMode  || 'sbs';
+      fontMode    = data.fontMode  || 'prop';
+      currentPage = data.currentPage || 0;
+      isOCR       = data.isOCR || false;
+      modifiedPages.clear();
+      (data.modifiedPages || []).forEach(i => modifiedPages.add(i));
+      noteOpenPages.clear();
+      (data.noteOpenPages || []).forEach(i => noteOpenPages.add(i));
+      pageHistory.clear();
+      Object.entries(data.pageHistory || {}).forEach(([k, v]) => pageHistory.set(parseInt(k), v));
+
+      // Restore embedded PDF if present
+      if (data.pdfBase64) {
+        try {
+          const binary = atob(data.pdfBase64);
+          const bytes  = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const ab = bytes.buffer;
+          pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+          // Reconstruct a synthetic File-like object for display
+          pdfFile = { name: data.fileName, size: ab.byteLength };
+          $('fileCardSize').textContent = formatBytes(ab.byteLength) + ' (embedded)';
+          log('PDF restored from project file');
+        } catch(err) {
+          log('Could not restore embedded PDF: ' + err.message);
+        }
+      }
+
+      // Update UI
+      $('fileCardName').textContent = data.fileName;
+      if (!data.pdfBase64) $('fileCardSize').textContent = '(project — no PDF)';
+      $('fileCard').classList.add('visible');
+      $('btnProcess').disabled = false;
+      showResults(false);
+      buildConfTable();
+      buildToc();
+      $('btnToc').style.display = '';
+      $('btnThumbs').style.display = viewMode === 'sbs' ? '' : 'none';
+      saveSession();
+    } catch(err) {
+      showError('Could not load project: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════
+// COPY ALL TEXT
+// ══════════════════════════════════════════════
+function copyAll(btn) {
+  const pages = getPagesToExport();
+  const text  = pages.map(p => p.text || '').join('\n\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('ok'); }, 1800);
+  }).catch(() => {
+    // Fallback for non-HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copied!'; btn.classList.add('ok');
+    setTimeout(() => { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy all text`; btn.classList.remove('ok'); }, 1800);
+  });
+}
+
+// ══════════════════════════════════════════════
+// RE-OCR PROGRESS
+// ══════════════════════════════════════════════
+function setReocrProgress(visible, label = '', pct = 0) {
+  const el  = $('reocrProgress');
+  const lbl = $('reocrProgressLabel');
+  const bar = $('reocrProgressFill');
+  const pctEl = $('reocrProgressPct');
+  if (!el) return;
+  el.classList.toggle('visible', visible);
+  if (lbl) lbl.textContent = label;
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+// ── Override reOcrPage to show progress ──
+
+// ══════════════════════════════════════════════
+// SHORTCUTS MODAL
+// ══════════════════════════════════════════════
+function shortcutsOpen()  { $('shortcutsModal').classList.add('open'); }
+function shortcutsClose() { $('shortcutsModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// WORD DIFF BADGE
+// ══════════════════════════════════════════════
+function wordDiffHtml(idx) {
+  const hist = pageHistory.get(idx);
+  if (!hist || !hist.length) return '';
+  const original = hist[0];
+  const current  = pagesText[idx];
+  const diff = current.wordCount - original.wordCount;
+  if (diff === 0) return `<span class="word-diff zero">±0 w</span>`;
+  if (diff > 0)   return `<span class="word-diff plus">+${diff} w</span>`;
+  return `<span class="word-diff minus">${diff} w</span>`;
+}
+
+// ══════════════════════════════════════════════
+// DRAG & DROP THUMBNAIL REORDER
+// ══════════════════════════════════════════════
+let dragSrcIdx = null;
+
+function setupThumbDragDrop(rail) {
+  rail.classList.add('can-reorder');
+  const hint = $('thumbReorderHint');
+  if (hint) hint.style.display = '';
+
+  rail.querySelectorAll('.thumb-item').forEach(item => {
+    const idx = parseInt(item.dataset.pgIdx);
+    item.draggable = true;
+
+    item.addEventListener('dragstart', e => {
+      dragSrcIdx = idx;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      rail.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('drag-over'));
+      dragSrcIdx = null;
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      rail.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault(); item.classList.remove('drag-over');
+      const destIdx = parseInt(item.dataset.pgIdx);
+      if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
+      reorderPages(dragSrcIdx, destIdx);
+    });
+  });
+}
+
+function reorderPages(fromIdx, toIdx) {
+  const [moved] = pagesText.splice(fromIdx, 1);
+  pagesText.splice(toIdx, 0, moved);
+  pagesText.forEach((p, i) => { p.page = i + 1; });
+
+  // Shift pageHistory keys
+  const histEntry = pageHistory.get(fromIdx);
+  const newHistory = new Map();
+  pageHistory.forEach((v, k) => {
+    if (k === fromIdx) return;
+    let nk = k;
+    if (fromIdx < toIdx)      { if (k > fromIdx && k <= toIdx) nk = k - 1; }
+    else if (fromIdx > toIdx) { if (k >= toIdx && k < fromIdx) nk = k + 1; }
+    newHistory.set(nk, v);
+  });
+  if (histEntry) newHistory.set(toIdx, histEntry);
+  pageHistory.clear(); newHistory.forEach((v, k) => pageHistory.set(k, v));
+
+  // Shift modifiedPages
+  const newMod = new Set();
+  modifiedPages.forEach(k => {
+    let nk = k;
+    if (k === fromIdx) nk = toIdx;
+    else if (fromIdx < toIdx && k > fromIdx && k <= toIdx) nk = k - 1;
+    else if (fromIdx > toIdx && k >= toIdx && k < fromIdx) nk = k + 1;
+    newMod.add(nk);
+  });
+  modifiedPages.clear(); newMod.forEach(k => modifiedPages.add(k));
+
+  // Update currentPage
+  if (currentPage === fromIdx) currentPage = toIdx;
+  else if (fromIdx < toIdx && currentPage > fromIdx && currentPage <= toIdx) currentPage--;
+  else if (fromIdx > toIdx && currentPage >= toIdx && currentPage < fromIdx) currentPage++;
+
+  thumbsRendered = false;
+  renderAllThumbs().then(() => setupThumbDragDrop($('thumbRail')));
+  applyViewMode();
+  buildToc();
+  scheduleSessionSave();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === '?') { e.preventDefault(); shortcutsOpen(); return; }
+  if (e.key === 'Escape') { shortcutsClose(); fnrClose(); return; }
+  if (!pagesText.length || showingAll) return;
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navPage(-1); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navPage(1); }
+  if (e.key === 'Home') { e.preventDefault(); navPage(-9999); }
+  if (e.key === 'End')  { e.preventDefault(); navPage(9999); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'h') { e.preventDefault(); fnrToggle(); }
+});
+
+// ── Session persistence ──
+const SESSION_KEY = 'pdfExtractor_session';
+
+function saveSession() {
+  if (!pagesText.length) return;
+  try {
+    const data = {
+      fileName: pdfFile ? pdfFile.name : 'document',
+      savedAt: Date.now(),
+      pagesText, isOCR, viewMode, fontMode, currentPage
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch(e) { /* quota exceeded or private mode — silently ignore */ }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+
+function checkSavedSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.pagesText || !data.pagesText.length) return;
+    // Show restore banner
+    $('restoreFileName').textContent = data.fileName;
+    $('restorePageCount').textContent = data.pagesText.length;
+    $('restoreBanner').classList.add('visible');
+  } catch(e) {}
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    pagesText   = data.pagesText;
+    isOCR       = data.isOCR;
+    viewMode    = data.viewMode || 'sbs';
+    fontMode    = data.fontMode || 'prop';
+    currentPage = data.currentPage || 0;
+    $('restoreBanner').classList.remove('visible');
+    // Update file card info
+    $('fileCardName').textContent = data.fileName;
+    $('fileCardSize').textContent = '(restored)';
+    $('fileCard').classList.add('visible');
+    $('btnProcess').disabled = false;
+    showResults(false);
+    buildConfTable();
+    buildToc();
+    $('btnToc').style.display = '';
+  } catch(e) { clearSession(); }
+}
+
+function dismissRestore() {
+  $('restoreBanner').classList.remove('visible');
+  clearSession();
+}
+
+// Reload PDF from the overlay button (after session restore)
+async function reloadPdfFromInput(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  pdfFile = file;
+  try {
+    const ab = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+    $('fileCardName').textContent = file.name;
+    $('fileCardSize').textContent = formatBytes(file.size);
+    zoomLevel = 1.0; $('zoomPct').textContent = '100%';
+    applyViewMode();
+  } catch(e) { showError('Could not load PDF: ' + e.message); }
+}
+
+// ── Page strip (processing indicator) ──
+function initPageStrip(total, pageTypes) {
+  const strip = $('procPageStrip');
+  const legend = $('procStripLegend');
+  const MAX_DOTS = 60;
+  strip.innerHTML = '';
+  const hasMixed = pageTypes && pageTypes.includes('native') && pageTypes.includes('ocr');
+  if (total <= MAX_DOTS) {
+    for (let i = 0; i < total; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'proc-page-dot pending';
+      dot.title = `Page ${i + 1}${pageTypes ? ' — ' + pageTypes[i] : ''}`;
+      dot.id = `pdot-${i}`;
+      strip.appendChild(dot);
+    }
+    strip.style.display = 'flex';
+    if (legend) legend.classList.toggle('visible', hasMixed);
+  } else {
+    strip.style.display = 'none';
+    if (legend) legend.classList.remove('visible');
+  }
+}
+
+function updatePageStrip(current, total, pageType) {
+  const strip = $('procPageStrip');
+  if (strip.style.display === 'none') return;
+  // Mark previous page as done
+  if (current > 1) {
+    const prev = document.getElementById(`pdot-${current - 2}`);
+    if (prev) {
+      prev.className = 'proc-page-dot done' + (prev.dataset.type === 'ocr' ? ' is-ocr' : '');
+    }
+  }
+  const active = document.getElementById(`pdot-${current - 1}`);
+  if (active) {
+    active.className = 'proc-page-dot active';
+    active.dataset.type = pageType || '';
+  }
+  $('procLabel').textContent = `Processing page ${current} of ${total} (${pageType || '…'})…`;
+}
+
+function showProcessingIndicator(visible) {
+  $('processingIndicator').classList.toggle('visible', visible);
+  if (!visible) {
+    // Mark last dot as done
+    const strip = $('procPageStrip');
+    strip.querySelectorAll('.proc-page-dot.active').forEach(d => {
+      d.className = 'proc-page-dot done' + (d.dataset.type === 'ocr' ? ' is-ocr' : '');
+    });
+    setTimeout(() => {
+      strip.style.display = 'none'; strip.innerHTML = '';
+      const legend = $('procStripLegend');
+      if (legend) legend.classList.remove('visible');
+    }, 800);
+  }
+}
+
+// ── Drop zone ──
+const dropZone = $('dropZone'), fileInput = $('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+// Check for saved session on startup
+checkSavedSession();
+
+function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) { showError('Please upload a .pdf file'); return; }
+  pdfFile = file;
+  hideError();
+  resetResults();
+  $('fileCard').classList.add('visible');
+  $('fileCardName').textContent = file.name;
+  $('fileCardSize').textContent = formatBytes(file.size);
+  const badge = $('pdfTypeBadge');
+  badge.style.display = ''; badge.textContent = 'Analyzing…'; badge.className = 'badge badge-amber';
+  $('btnProcess').disabled = false;
+  analyzePdf(file);
+}
+
+async function analyzePdf(file) {
+  try {
+    const ab = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+    const nPages = pdfDoc.numPages;
+    const badge = $('pdfTypeBadge');
+
+    // Sample up to 5 evenly-spaced pages instead of just page 1
+    const sampleIdxs = samplePageIdxs(nPages, 5);
+    let nativeCount = 0, scannedCount = 0;
+    for (const i of sampleIdxs) {
+      const pg = await pdfDoc.getPage(i);
+      const tc = await pg.getTextContent();
+      const txt = tc.items.map(x => x.str).join('').trim();
+      if (txt.length > 50) nativeCount++; else scannedCount++;
+    }
+
+    if (scannedCount === 0) {
+      badge.textContent = '✓ Native text'; badge.className = 'badge badge-green'; isOCR = false;
+    } else if (nativeCount === 0) {
+      badge.textContent = '⚠ Scanned — OCR'; badge.className = 'badge badge-amber'; isOCR = true;
+    } else {
+      badge.textContent = '⚡ Mixed'; badge.className = 'badge badge-purple'; isOCR = true; // will use hybrid
+    }
+  } catch(e) { showError('Could not read PDF: ' + e.message); }
+}
+
+// Return up to `n` evenly-spaced page numbers (1-based) from a pdf with `total` pages
+function samplePageIdxs(total, n) {
+  if (total <= n) return Array.from({ length: total }, (_, i) => i + 1);
+  const step = (total - 1) / (n - 1);
+  return Array.from({ length: n }, (_, i) => Math.round(1 + i * step));
+}
+
+// Per-page text detection threshold
+const NATIVE_TEXT_THRESHOLD = 20;
+
+// ── Auto-DPI scale calculation ──
+// Target 300 DPI. PDF user-space is in points (72pt = 1 inch).
+// scale = targetPx / (pageWidthPt / 72 * targetDPI)  →  simplifies to targetDPI / 72
+const AUTO_DPI_TARGET = 300;
+
+async function getPageScale(page) {
+  const scaleVal = $('renderScale').value;
+  if (scaleVal !== 'auto') return parseFloat(scaleVal);
+  const vp = page.getViewport({ scale: 1 });
+  // vp.width is in CSS px at scale=1, which equals PDF user-units (1/72 inch each)
+  // To achieve AUTO_DPI_TARGET we need: scale = AUTO_DPI_TARGET / 72
+  const scale = AUTO_DPI_TARGET / 72;
+  // Cap at 5× to avoid OOM on very small pages
+  return Math.min(scale, 5);
+}
+
+// ── Image preprocessing pipeline ──
+function preprocessCanvas(srcCanvas) {
+  const doContrast  = $('ppContrast')?.checked;
+  const doSharpen   = $('ppSharpen')?.checked;
+  const doBinarize  = $('ppBinarize')?.checked;
+  const doDeskew    = $('ppDeskew')?.checked;
+
+  if (!doContrast && !doSharpen && !doBinarize && !doDeskew) return srcCanvas;
+
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const dst = document.createElement('canvas');
+  dst.width = w; dst.height = h;
+  const ctx = dst.getContext('2d');
+  ctx.drawImage(srcCanvas, 0, 0);
+
+  let imgData = ctx.getImageData(0, 0, w, h);
+  let d = imgData.data;
+
+  if (doContrast) {
+    // S-curve contrast boost: increases separation between light and dark
+    const lut = buildContrastLUT(1.5);
+    for (let i = 0; i < d.length; i += 4) {
+      d[i]   = lut[d[i]];
+      d[i+1] = lut[d[i+1]];
+      d[i+2] = lut[d[i+2]];
+    }
+  }
+
+  if (doSharpen) {
+    // Unsharp mask via convolution kernel
+    imgData = applySharpen(ctx, imgData, w, h);
+    d = imgData.data;
+  }
+
+  if (doBinarize) {
+    // Otsu's method: global adaptive threshold
+    const thresh = otsuThreshold(d);
+    for (let i = 0; i < d.length; i += 4) {
+      const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+      const v = lum > thresh ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = v;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+
+  if (doDeskew) {
+    return deskewCanvas(dst);  // returns a new canvas, corrected
+  }
+
+  return dst;
+}
+
+function buildContrastLUT(factor) {
+  const lut = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    const n = i / 255 - 0.5;
+    // Sigmoid-like curve
+    const v = 0.5 + n * factor;
+    lut[i] = Math.max(0, Math.min(255, Math.round(v * 255)));
+  }
+  return lut;
+}
+
+function applySharpen(ctx, imgData, w, h) {
+  // 3×3 unsharp mask kernel
+  const kernel = [0,-1,0,-1,5,-1,0,-1,0];
+  const src = imgData.data;
+  const out = ctx.createImageData(w, h);
+  const d2  = out.data;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const px = (y * w + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        let val = 0;
+        for (let ky = -1; ky <= 1; ky++) {
+          for (let kx = -1; kx <= 1; kx++) {
+            val += src[((y+ky)*w+(x+kx))*4+c] * kernel[(ky+1)*3+(kx+1)];
+          }
+        }
+        d2[px+c] = Math.max(0, Math.min(255, val));
+      }
+      d2[px+3] = 255;
+    }
+  }
+  // Fill border pixels from source
+  for (let i = 0; i < src.length; i++) {
+    if (!d2[i]) d2[i] = src[i];
+  }
+  return out;
+}
+
+function otsuThreshold(data) {
+  const hist = new Int32Array(256);
+  for (let i = 0; i < data.length; i += 4) {
+    hist[Math.round(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2])]++;
+  }
+  const total = data.length / 4;
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0, wB = 0, max = 0, thresh = 128;
+  for (let i = 0; i < 256; i++) {
+    wB += hist[i]; if (!wB) continue;
+    const wF = total - wB;
+    if (!wF) break;
+    sumB += i * hist[i];
+    const mB = sumB / wB, mF = (sum - sumB) / wF;
+    const between = wB * wF * (mB - mF) ** 2;
+    if (between > max) { max = between; thresh = i; }
+  }
+  return thresh;
+}
+
+function deskewCanvas(srcCanvas) {
+  // Projection-based deskew: find angle that maximises horizontal projection variance
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const ctx = srcCanvas.getContext('2d');
+  const gray = ctx.getImageData(0, 0, w, h).data;
+
+  // Sample angles from -5° to +5° in 0.5° steps
+  const angles = [];
+  for (let a = -5; a <= 5; a += 0.5) angles.push(a);
+
+  let bestAngle = 0, bestScore = -Infinity;
+  for (const angle of angles) {
+    const score = projectionScore(gray, w, h, angle);
+    if (score > bestScore) { bestScore = score; bestAngle = angle; }
+  }
+
+  if (Math.abs(bestAngle) < 0.3) return srcCanvas; // not worth rotating
+
+  // Apply rotation
+  const dst = document.createElement('canvas');
+  dst.width = w; dst.height = h;
+  const dctx = dst.getContext('2d');
+  dctx.fillStyle = '#fff'; dctx.fillRect(0, 0, w, h);
+  dctx.translate(w/2, h/2);
+  dctx.rotate(-bestAngle * Math.PI / 180);
+  dctx.drawImage(srcCanvas, -w/2, -h/2);
+  return dst;
+}
+
+function projectionScore(gray, w, h, angleDeg) {
+  // Rotate pixel grid conceptually and compute row-sum variance
+  const cos = Math.cos(angleDeg * Math.PI / 180);
+  const sin = Math.sin(angleDeg * Math.PI / 180);
+  const rowSums = new Float32Array(h);
+  for (let y = 0; y < h; y += 2) {     // sample every other row for speed
+    let s = 0, cnt = 0;
+    for (let x = 0; x < w; x += 2) {
+      const nx = Math.round((x - w/2)*cos - (y - h/2)*sin + w/2);
+      const ny = Math.round((x - w/2)*sin + (y - h/2)*cos + h/2);
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+        const lum = 0.299*gray[(ny*w+nx)*4]+0.587*gray[(ny*w+nx)*4+1]+0.114*gray[(ny*w+nx)*4+2];
+        s += lum < 128 ? 1 : 0; cnt++;
+      }
+    }
+    rowSums[y] = cnt ? s / cnt : 0;
+  }
+  // Variance of row sums = higher when lines are horizontal
+  let mean = 0;
+  for (const v of rowSums) mean += v;
+  mean /= h;
+  let variance = 0;
+  for (const v of rowSums) variance += (v - mean) ** 2;
+  return variance;
+}
+
+// ── Tesseract params builder ──
+function buildTesseractParams() {
+  const psm = $('ocrPsm')?.value || '1';
+  return {
+    tessedit_pageseg_mode: psm,
+    preserve_interword_spaces: '1',
+  };
+}
+
+// ── OCR a single page canvas ──
+function cancelProcessing() {
+  if (!isProcessing) return;
+  cancelFlag = true; log('Cancelling…'); $('btnCancel').disabled = true;
+}
+
+// ── Processing ──
+async function startProcessing() {
+  if (!pdfFile || isProcessing) return;
+  isProcessing = true; cancelFlag = false;
+  hideError(); resetResults();
+  $('btnProcess').disabled = true;
+  $('btnCancel').style.display = ''; $('btnCancel').disabled = false;
+  $('progressBox').classList.add('visible');
+  $('emptyState').style.display = 'none';
+  $('partialNotice').classList.remove('visible');
+
+  // Acquire Wake Lock so minimising / switching tabs doesn't throttle OCR
+  let wakeLock = null;
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      log('Wake lock acquired — extraction will continue if tab is minimised');
+    }
+  } catch(e) { /* Wake Lock not available — silently continue */ }
+
+  let worker = null;
+  try {
+    if (!pdfDoc) {
+      const ab = await pdfFile.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+    }
+    const nPages = pdfDoc.numPages;
+
+    setStep('detect', 'active'); setProgress(2, 'Scanning pages…');
+
+    // ── Per-page detection pass (fast, no rendering) ──
+    const pageTypes = []; // 'native' | 'ocr'
+    let nativePages = 0, ocrPages = 0;
+    for (let i = 1; i <= nPages; i++) {
+      if (cancelFlag) throw new Error('CANCELLED');
+      log(`Detecting page ${i}/${nPages}…`);
+      setProgress(Math.round(2 + (i / nPages) * 10), `Detecting page ${i} of ${nPages}…`);
+      const pg = await pdfDoc.getPage(i);
+      const tc = await pg.getTextContent();
+      const txt = tc.items.map(x => x.str).join('').trim();
+      if (txt.length >= NATIVE_TEXT_THRESHOLD) {
+        pageTypes.push('native'); nativePages++;
+      } else {
+        pageTypes.push('ocr'); ocrPages++;
+      }
+    }
+
+    const isMixed  = nativePages > 0 && ocrPages > 0;
+    const allOcr   = nativePages === 0;
+    isOCR = ocrPages > 0;
+
+    // Update badge with final accurate classification
+    const badge = $('pdfTypeBadge');
+    badge.style.display = '';
+    if (allOcr) {
+      badge.textContent = '⚠ Scanned — OCR'; badge.className = 'badge badge-amber';
+    } else if (isMixed) {
+      badge.textContent = `⚡ Mixed (${ocrPages} OCR / ${nativePages} native)`;
+      badge.className = 'badge badge-purple';
+    } else {
+      badge.textContent = '✓ Native text'; badge.className = 'badge badge-green';
+    }
+
+    setStep('detect', 'done');
+    log(isMixed
+      ? `Mixed PDF: ${nativePages} native + ${ocrPages} scanned pages`
+      : allOcr ? 'Scanned PDF — OCR (Tesseract)' : 'Native text — direct extraction');
+
+    if (cancelFlag) throw new Error('CANCELLED');
+
+    setStep('extract', 'active');
+
+    // Init OCR worker only if needed
+    if (isOCR) {
+      const lang = $('ocrLang').value;
+      log('Loading OCR engine: ' + lang + '…');
+      worker = await Tesseract.createWorker(lang, 1, {
+        logger: m => { if (m.status === 'recognizing text') log('OCR pg: ' + Math.round(m.progress * 100) + '%'); }
+      });
+    }
+
+    initPageStrip(nPages, pageTypes);
+    showProcessingIndicator(true);
+
+    for (let i = 1; i <= nPages; i++) {
+      if (cancelFlag) break;
+      updatePageStrip(i, nPages, pageTypes[i-1]);
+      setProgress(Math.round(15 + (i / nPages) * 80), `Page ${i} of ${nPages}…`);
+
+      const page = await pdfDoc.getPage(i);
+      const pageIsOcr = pageTypes[i - 1] === 'ocr';
+      let text = '', confidence = null;
+
+      if (pageIsOcr) {
+        log(`OCR page ${i}/${nPages}…`);
+        const scale = await getPageScale(page);
+        const vp = page.getViewport({ scale });
+        const rawCanvas = document.createElement('canvas');
+        rawCanvas.width = Math.round(vp.width); rawCanvas.height = Math.round(vp.height);
+        await page.render({ canvasContext: rawCanvas.getContext('2d'), viewport: vp }).promise;
+        // Preprocessing pipeline
+        const procCanvas = preprocessCanvas(rawCanvas);
+        const blob = await new Promise(r => procCanvas.toBlob(r, 'image/png'));
+        // Apply Tesseract parameters
+        const params = buildTesseractParams();
+        await worker.setParameters(params).catch(() => {});
+        const { data } = await worker.recognize(blob, {}, { tessjs_create_hocr: '0' });
+        text = data.text; confidence = Math.round(data.confidence);
+        log(`OCR page ${i}: ${confidence}% confidence (${scale.toFixed(1)}× scale)`);
+      } else {
+        log(`Reading page ${i}/${nPages}…`);
+        const tc = await page.getTextContent();
+        text = tc.items.map(it => it.str + (it.hasEOL ? '\n' : ' ')).join('').trim();
+      }
+
+      pagesText.push({
+        page: i, text: text.trim(),
+        charCount: text.trim().length,
+        wordCount: text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0,
+        isOCR: pageIsOcr, confidence
+      });
+    }
+
+    if (worker) { await worker.terminate(); worker = null; }
+    showProcessingIndicator(false);
+
+    const wasCancelled = cancelFlag;
+    if (wasCancelled) {
+      setStep('extract','cancelled'); setStep('done','cancelled');
+      setProgress(Math.round(pagesText.length / pdfDoc.numPages * 100), 'Cancelled');
+      log(`Cancelled — ${pagesText.length}/${pdfDoc.numPages} pages extracted`);
+      if (pagesText.length > 0) {
+        $('partialNotice').classList.add('visible');
+        $('partialMsg').textContent = `Partial result: ${pagesText.length} of ${pdfDoc.numPages} pages available.`;
+        showResults(true);
+      }
+    } else {
+      setStep('extract','done'); setStep('done','done');
+      setProgress(100, 'Extraction complete');
+      log(`${pagesText.length} pages · ${totalWords().toLocaleString('en-US')} words`);
+      showResults(false);
+      saveSession();
+      buildConfTable();
+      buildToc();
+      $('btnToc').style.display = '';
+    }
+
+  } catch(e) {
+    if (worker) { try { await worker.terminate(); } catch(_){} }
+    showProcessingIndicator(false);
+    if (e.message !== 'CANCELLED') { showError('Error: ' + e.message); log('Error: ' + e.message); }
+  } finally {
+    if (wakeLock) { try { await wakeLock.release(); } catch(_){} wakeLock = null; }
+  }
+
+  $('btnCancel').style.display = 'none';
+  $('btnProcess').disabled = false;
+  isProcessing = false; cancelFlag = false;
+}
+
+// ── Show results ──
+function showResults(partial) {
+  const tw = totalWords(), tc2 = pagesText.reduce((s,p) => s+p.charCount, 0);
+  $('statPages').textContent = pagesText.length + (partial ? '*' : '');
+  $('statWords').textContent = tw.toLocaleString('en-US');
+  $('statChars').textContent = tc2.toLocaleString('en-US');
+  $('statsSection').style.display = '';
+  $('dlSection').style.display    = '';
+  $('topbar').style.display       = '';
+  $('emptyState').style.display   = 'none';
+  rangeUpdate();
+  currentPage = 0; showingAll = false;
+  applyViewMode();
+}
+
+// ── View mode ──
+function setViewMode(mode) {
+  viewMode = mode;
+  $('vSbs').classList.toggle('active', mode === 'sbs');
+  $('vSingle').classList.toggle('active', mode === 'single');
+  $('btnPdfOnly').classList.toggle('active', mode === 'pdf');
+  $('searchWrap').style.display  = mode === 'single' ? '' : 'none';
+  $('fontToggle').style.display  = mode === 'single' ? '' : 'none';
+  $('btnThumbs').style.display   = mode === 'sbs'    ? '' : 'none';
+  applyViewMode();
+}
+
+function applyViewMode() {
+  if (!pagesText.length) return;
+  $('panelSbs').style.display    = viewMode === 'sbs'    ? '' : 'none';
+  $('panelSingle').style.display = viewMode === 'single' ? '' : 'none';
+  $('panelPdfOnly').classList.toggle('visible', viewMode === 'pdf');
+  if (viewMode === 'sbs') {
+    if (showingAll) renderSbsAll(); else renderSbs(currentPage);
+    setupSyncScroll();
+  } else if (viewMode === 'single') {
+    if (showingAll) renderSingleAll(); else renderSinglePage(currentPage);
+  } else if (viewMode === 'pdf') {
+    renderPdfOnlyPage(currentPage + 1);
+  }
+  updateNavButtons();
+}
+
+// ── PDF-only view render ──
+async function renderPdfOnlyPage(pageNum) {
+  const wrap = $('pdfCanvasWrapOnly');
+  if (!wrap) return;
+  wrap.innerHTML = '<span class="canvas-loading" style="margin:2rem auto;display:block;text-align:center">Rendering…</span>';
+  if (!pdfDoc) { wrap.innerHTML = ''; return; }
+  const canvas = await renderPdfPageToCanvas(pageNum);
+  wrap.innerHTML = '';
+  if (canvas) {
+    const spacer = document.createElement('div');
+    spacer.id = 'canvasSpacerOnly';
+    spacer.style.cssText = `width:${Math.round(canvas.width*zoomLevel)}px;height:${Math.round(canvas.height*zoomLevel)}px;position:relative;flex-shrink:0;margin:0 auto;`;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0'; canvas.style.left = '0';
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = `scale(${zoomLevel})`;
+    spacer.appendChild(canvas);
+    wrap.appendChild(spacer);
+    $('zoomBarOnly').classList.add('visible');
+    $('zoomPctOnly').textContent = Math.round(zoomLevel * 100) + '%';
+    zoomListenerAttached = false;
+    setupCanvasZoom($('pdfPaneOnly'), wrap);
+  }
+}
+function confHtml(p, block) {
+  if (!p.isOCR || p.confidence === null) return '';
+  const c = p.confidence;
+  const cls = c >= 80 ? 'hi' : c >= 50 ? 'md' : 'lo';
+  const label = c >= 80 ? 'Good' : c >= 50 ? 'Fair' : 'Low';
+  if (block) {
+    return `<div class="sbs-conf-row">
+      <span class="pg-conf">
+        <span class="conf-track"><span class="conf-fill ${cls}" style="width:${c}%"></span></span>
+        <span class="conf-text ${cls}">OCR confidence: ${c}% — ${label}</span>
+      </span>
+    </div>`;
+  }
+  return `<span class="pg-conf" style="margin-left:6px">
+    <span class="conf-track"><span class="conf-fill ${cls}" style="width:${c}%"></span></span>
+    <span class="conf-text ${cls}">${c}%</span>
+  </span>`;
+}
+
+// ── Edit mode ──
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = $('btnEdit');
+  btn.classList.toggle('active', editMode);
+  btn.innerHTML = editMode
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Done`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit`;
+  $('editHint')?.classList.toggle('visible', editMode);
+  if (!editMode && tocEntries.length) buildToc();   // refresh after edits
+  // Re-render to apply/remove contenteditable
+  applyViewMode();
+}
+
+// Make a .page-text div editable and wire up live save
+// ══════════════════════════════════════════════
+// PAGE NOTES
+// ══════════════════════════════════════════════
+const noteOpenPages = new Set();   // tracks which pages have the note expanded
+
+function noteHtml(idx, collapsed = true) {
+  const note = pagesText[idx]?.note || '';
+  const hasNote = note.trim().length > 0;
+  const isOpen = !collapsed || noteOpenPages.has(idx);
+  return `<div class="note-wrap" data-note-idx="${idx}">
+    <button class="note-toggle${hasNote ? ' has-note' : ''}${isOpen ? ' open' : ''}"
+            onclick="noteToggle(${idx}, this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="note-dot"></span>
+      ${hasNote ? `Note · ${note.trim().length} chars` : 'Add note'}
+    </button>
+    <div class="note-body${isOpen ? ' open' : ''}">
+      <textarea class="note-textarea"
+        placeholder="Review note, annotation, or flag for this page…"
+        oninput="noteSave(${idx}, this)"
+        onblur="noteSave(${idx}, this)"
+      >${escapeHtml(note)}</textarea>
+      <div class="note-meta">
+        <span class="note-char-count" id="noteCount-${idx}">${note.length ? note.length + ' chars' : ''}</span>
+        <button class="note-clear-btn${hasNote ? ' visible' : ''}"
+                onclick="noteClear(${idx})" title="Clear note">Clear</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function noteToggle(idx, btn) {
+  const wrap = btn.closest('.note-wrap');
+  const body = wrap.querySelector('.note-body');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    noteOpenPages.add(idx);
+    // Focus textarea when opening
+    const ta = body.querySelector('.note-textarea');
+    if (ta) setTimeout(() => ta.focus(), 50);
+  } else {
+    noteOpenPages.delete(idx);
+  }
+}
+
+function noteSave(idx, ta) {
+  if (!pagesText[idx]) return;
+  const val = ta.value;
+  pagesText[idx].note = val;
+  const hasNote = val.trim().length > 0;
+  // Update toggle label and style
+  const wrap = ta.closest('.note-wrap');
+  const btn  = wrap?.querySelector('.note-toggle');
+  if (btn) {
+    btn.classList.toggle('has-note', hasNote);
+    // Update label text (keep the SVG and dot, replace text node)
+    const svg  = btn.querySelector('svg').outerHTML;
+    const dot  = btn.querySelector('.note-dot').outerHTML;
+    btn.innerHTML = svg + dot + (hasNote ? ` Note · ${val.trim().length} chars` : ' Add note');
+  }
+  // Update char count and clear button
+  const countEl = document.getElementById(`noteCount-${idx}`);
+  if (countEl) countEl.textContent = val.length ? val.length + ' chars' : '';
+  const clearBtn = wrap?.querySelector('.note-clear-btn');
+  if (clearBtn) clearBtn.classList.toggle('visible', hasNote);
+  scheduleSessionSave();
+}
+
+function noteClear(idx) {
+  if (!pagesText[idx]) return;
+  pagesText[idx].note = '';
+  const wrap = document.querySelector(`.note-wrap[data-note-idx="${idx}"]`);
+  if (wrap) {
+    const ta = wrap.querySelector('.note-textarea');
+    if (ta) { ta.value = ''; noteSave(idx, ta); }
+  }
+}
+
+// ══════════════════════════════════════════════
+// VERSION HISTORY
+// ══════════════════════════════════════════════
+const pageHistory = new Map();   // idx → [{text, wordCount, charCount, ts, label}]
+const MAX_VERSIONS = 20;
+
+// Take a snapshot of the current text BEFORE a new edit begins
+function snapshotPage(idx) {
+  const p = pagesText[idx];
+  if (!p) return;
+  const hist = pageHistory.get(idx) || [];
+  // Avoid duplicate consecutive snapshots
+  if (hist.length && hist[hist.length - 1].text === p.text) return;
+  hist.push({
+    text:      p.text,
+    wordCount: p.wordCount,
+    charCount: p.charCount,
+    ts:        Date.now(),
+    label:     hist.length === 0 ? 'Original' : `Version ${hist.length}`
+  });
+  if (hist.length > MAX_VERSIONS) hist.shift();
+  pageHistory.set(idx, hist);
+}
+
+function restoreVersion(idx, versionIdx) {
+  const hist = pageHistory.get(idx);
+  if (!hist || !hist[versionIdx]) return;
+  const v = hist[versionIdx];
+  // Snapshot current state before restoring (so you can undo the undo)
+  snapshotPage(idx);
+  pagesText[idx].text      = v.text;
+  pagesText[idx].wordCount = v.wordCount;
+  pagesText[idx].charCount = v.charCount;
+  modifiedPages.add(idx);
+  scheduleSessionSave();
+  // Close any open dropdown and re-render
+  closeAllHistPanels();
+  applyViewMode();
+}
+
+function closeAllHistPanels() {
+  document.querySelectorAll('.hist-panel.open').forEach(p => p.classList.remove('open'));
+}
+
+function toggleHistPanel(idx, btnEl) {
+  closeAllHistPanels();
+  const panel = btnEl.closest('.hist-dropdown').querySelector('.hist-panel');
+  if (!panel) return;
+  if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+  renderHistPanel(idx, panel);
+  panel.classList.add('open');
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!panel.contains(e.target) && !btnEl.contains(e.target)) {
+        panel.classList.remove('open');
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 0);
+}
+
+function renderHistPanel(idx, panel) {
+  const hist = pageHistory.get(idx) || [];
+  const current = pagesText[idx];
+
+  const entries = [...hist].reverse().map((v, ri) => {
+    const origIdx = hist.length - 1 - ri;   // real index in array
+    const isCurrent = v.text === current.text;
+    const isOriginal = origIdx === 0;
+    const ago = formatAgo(v.ts);
+    const icon = isOriginal ? '◆' : isCurrent ? '●' : '○';
+    const cls  = `hist-entry${isOriginal ? ' is-original' : ''}${isCurrent ? ' is-current' : ''}`;
+    return `<div class="${cls}">
+      <span class="hist-entry-icon">${icon}</span>
+      <div class="hist-entry-meta">
+        <div class="hist-entry-label">${escapeHtml(v.label)}</div>
+        <div class="hist-entry-sub">${ago}</div>
+      </div>
+      <span class="hist-entry-words">${v.wordCount.toLocaleString()} w</span>
+      <button class="hist-restore-btn" onclick="restoreVersion(${idx},${origIdx})">Restore</button>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="hist-panel-header">
+      <span class="hist-panel-title">Page ${idx + 1} history · ${hist.length} version${hist.length !== 1 ? 's' : ''}</span>
+      <button class="hist-panel-close" onclick="closeAllHistPanels()">×</button>
+    </div>
+    <div class="hist-list">${entries || '<div style="padding:.75rem;font-size:11px;color:var(--text-3)">No history yet.</div>'}</div>`;
+}
+
+function formatAgo(ts) {
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 10)  return 'just now';
+  if (s < 60)  return `${s}s ago`;
+  if (s < 3600) return `${Math.round(s/60)}m ago`;
+  if (s < 86400) return `${Math.round(s/3600)}h ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+// Build the history button HTML for a page
+function histBtnHtml(idx) {
+  const hist = pageHistory.get(idx) || [];
+  const hasHist = hist.length > 0;
+  const cls = hasHist ? 'hist-btn has-history' : 'hist-btn';
+  const label = hasHist ? `↩ ${hist.length}` : '↩';
+  return `<div class="hist-dropdown">
+    <button class="${cls}" onclick="toggleHistPanel(${idx},this)" title="Version history">
+      ${label}
+    </button>
+    <div class="hist-panel"></div>
+  </div>`;
+}
+
+function makeEditable(el, idx) {
+  el.contentEditable = 'true';
+  el.spellcheck = true;
+  let snapshotted = false;   // snapshot once per focus session
+
+  el.addEventListener('focus', () => { snapshotted = false; });
+
+  el.addEventListener('input', () => {
+    // Take snapshot on first keystroke of each edit session
+    if (!snapshotted) { snapshotPage(idx); snapshotted = true; }
+    const newText = el.innerText;
+    pagesText[idx].text      = newText;
+    pagesText[idx].charCount = newText.length;
+    pagesText[idx].wordCount = newText.trim() ? newText.trim().split(/\s+/).filter(Boolean).length : 0;
+    markPageModified(idx);
+    scheduleSessionSave();
+  });
+
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  });
+}
+
+// Debounced session save
+let _saveTimer = null;
+function scheduleSessionSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveSession, 1500);
+}
+
+// Track which pages have been manually edited
+const modifiedPages = new Set();
+function markPageModified(idx) {
+  modifiedPages.add(idx);
+  // Refresh history button badge in the current view
+  const dropdown = document.querySelector(`[data-page-idx="${idx}"] .hist-dropdown`);
+  if (dropdown) {
+    const hist = pageHistory.get(idx) || [];
+    const btn = dropdown.querySelector('.hist-btn');
+    if (btn) {
+      btn.className = hist.length ? 'hist-btn has-history' : 'hist-btn';
+      btn.textContent = hist.length ? `↩ ${hist.length}` : '↩';
+    }
+  }
+  // Update stats
+  const tw = totalWords(), tc2 = pagesText.reduce((s,p) => s+p.charCount, 0);
+  if ($('statWords')) $('statWords').textContent = tw.toLocaleString('en-US');
+  if ($('statChars')) $('statChars').textContent = tc2.toLocaleString('en-US');
+}
+async function renderSbs(idx) {
+  showingAll = false; currentPage = idx;
+  $('pageIndicator').textContent = `${idx + 1} / ${pagesText.length}`;
+  renderSbsText(idx);
+  zoomListenerAttached = false;
+  await renderPdfPage(idx + 1);
+  updateNavButtons();
+  if (thumbsVisible) updateThumbActive(idx);
+  if (tocVisible) updateTocActive(idx);
+}
+
+function renderSbsText(idx) {
+  const p = pagesText[idx];
+  const hasText = p.text && p.text.length > 0;
+  const isModified = modifiedPages.has(idx);
+  const copyBtn = hasText
+    ? `<button class="copy-btn" onclick="copyPage(${idx},this)">Copy</button>`
+    : '';
+  const modBadge = isModified ? '<span class="pg-modified">edited</span>' : '';
+  const diffBadge = wordDiffHtml(idx);
+  const histBtn  = histBtnHtml(idx);
+  $('textPaneContent').innerHTML =
+    confHtml(p, true) +
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem">${copyBtn}${modBadge}${diffBadge}${histBtn}</div>` +
+    (hasText
+      ? `<div class="page-text${fontMode==='mono'?' mono':''}" data-idx="${idx}">${escapeHtml(p.text)}</div>`
+      : `<div class="page-empty">No text detected on this page.</div>`) +
+    noteHtml(idx, true);   // collapsed by default in SBS single-page view
+  if (editMode && hasText) {
+    const el = $('textPaneContent').querySelector('.page-text');
+    if (el) makeEditable(el, idx);
+  }
+}
+
+async function renderSbsAll() {
+  showingAll = true;
+  $('pageIndicator').textContent = `${pagesText.length} pages`;
+
+  $('textPaneContent').innerHTML = pagesText.map((p, idx) => {
+    const hasText = p.text && p.text.length > 0;
+    const modBadge = modifiedPages.has(idx) ? '<span class="pg-modified">edited</span>' : '';
+    return `<div class="page-block" data-page-idx="${idx}">
+      <div class="page-block-header">
+        <span class="pg-label">Page ${p.page}</span>
+        <span class="pg-meta">${p.wordCount.toLocaleString('en-US')} words · ${p.charCount.toLocaleString('en-US')} chars</span>
+        ${confHtml(p, false)}
+        ${modBadge}${wordDiffHtml(idx)}
+        ${histBtnHtml(idx)}
+        ${hasText ? `<button class="copy-btn" onclick="copyPage(${p.page-1},this)">Copy</button>` : ''}
+      </div>
+      ${hasText
+        ? `<div class="page-text${fontMode==='mono'?' mono':''}" data-idx="${idx}">${escapeHtml(p.text)}</div>`
+        : `<div class="page-empty">No text detected.</div>`}
+      ${noteHtml(idx, false)}
+    </div>`;
+  }).join('');
+
+  if (editMode) {
+    $('textPaneContent').querySelectorAll('.page-text[data-idx]').forEach(el => {
+      makeEditable(el, parseInt(el.dataset.idx));
+    });
+  }
+
+  $('pdfCanvasWrap').innerHTML = '<span class="canvas-loading">Rendering pages…</span>';
+  for (let i = 1; i <= pagesText.length; i++) {
+    const canvas = await renderPdfPageToCanvas(i);
+    if (!canvas) continue;
+    const wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '1.5rem';
+    const lbl = document.createElement('div');
+    lbl.className = 'canvas-page-label';
+    lbl.textContent = `Page ${i}`;
+    wrapper.appendChild(lbl); wrapper.appendChild(canvas);
+    $('pdfCanvasWrap').appendChild(wrapper);
+  }
+  const loading = $('pdfCanvasWrap').querySelector('.canvas-loading');
+  if (loading) loading.remove();
+
+  updateNavButtons();
+}
+
+async function renderPdfPage(pageNum) {
+  $('pdfCanvasWrap').innerHTML = '<span class="canvas-loading">Rendering…</span>';
+  if (!pdfDoc) {
+    $('pdfCanvasWrap').innerHTML = `
+      <div class="no-pdf-overlay">
+        <svg class="no-pdf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <p>El text s'ha restaurat però el PDF no es pot carregar sense el fitxer original.</p>
+        <label title="Carrega el PDF original per veure la previsualització">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Load PDF
+          <input type="file" accept=".pdf" style="display:none" onchange="reloadPdfFromInput(this)">
+        </label>
+      </div>`;
+    $('zoomBar').classList.remove('visible');
+    return;
+  }
+  const canvas = await renderPdfPageToCanvas(pageNum);
+  $('pdfCanvasWrap').innerHTML = '';
+  if (canvas) {
+    // Spacer div: its size = canvas * zoomLevel so the pane scroll area is correct
+    const spacer = document.createElement('div');
+    spacer.id = 'canvasSpacer';
+    spacer.style.cssText = `
+      width:  ${Math.round(canvas.width  * zoomLevel)}px;
+      height: ${Math.round(canvas.height * zoomLevel)}px;
+      position: relative; flex-shrink: 0;`;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0'; canvas.style.left = '0';
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = `scale(${zoomLevel})`;
+    spacer.appendChild(canvas);
+    $('pdfCanvasWrap').appendChild(spacer);
+    $('zoomBar').classList.add('visible');
+    $('zoomPct').textContent = Math.round(zoomLevel * 100) + '%';
+    setupCanvasZoom($('pdfPane'), $('pdfCanvasWrap'));
+    updatePanCursor();
+  }
+}
+
+async function renderPdfPageToCanvas(pageNum) {
+  if (!pdfDoc) return null;
+  try {
+    const page  = await pdfDoc.getPage(pageNum);
+    const paneW = ($('pdfPane').clientWidth || 540) - 40;
+    const vp0   = page.getViewport({ scale: 1 });
+    const scale = Math.min(paneW / vp0.width, 2.5);
+    const vp    = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.round(vp.width);
+    canvas.height = Math.round(vp.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    return canvas;
+  } catch(e) { return null; }
+}
+
+// ── Single view ──
+function renderSinglePage(idx) {
+  showingAll = false; currentPage = idx;
+  const p = pagesText[idx];
+  $('pageIndicator').textContent = `${idx + 1} / ${pagesText.length}`;
+  const hasText = p.text && p.text.length > 0;
+  const q = $('searchInput').value.trim();
+  const modBadge = modifiedPages.has(idx) ? '<span class="pg-modified">edited</span>' : '';
+  $('singleContent').innerHTML =
+    `<div class="page-block" data-page-idx="${idx}">
+      <div class="page-block-header">
+        <span class="pg-label">Page ${p.page}</span>
+        <span class="pg-meta">${p.wordCount.toLocaleString('en-US')} words · ${p.charCount.toLocaleString('en-US')} chars</span>
+        ${confHtml(p, false)}
+        ${modBadge}${wordDiffHtml(idx)}
+        ${histBtnHtml(idx)}
+        ${hasText ? `<button class="copy-btn" onclick="copyPage(${idx},this)">Copy</button>` : ''}
+      </div>
+      ${hasText
+        ? `<div class="page-text${fontMode==='mono'?' mono':''}" data-idx="${idx}">${editMode ? escapeHtml(p.text) : (q ? highlight(escapeHtml(p.text),q) : escapeHtml(p.text))}</div>`
+        : `<div class="page-empty">No text detected on this page.</div>`}
+      ${noteHtml(idx, true)}
+    </div>`;
+  if (editMode && hasText) {
+    const el = $('singleContent').querySelector('.page-text');
+    if (el) makeEditable(el, idx);
+  }
+  updateNavButtons();
+}
+
+function renderSingleAll() {
+  showingAll = true;
+  const q = $('searchInput').value.trim();
+  $('pageIndicator').textContent = `${pagesText.length} pages`;
+  $('singleContent').innerHTML = pagesText.map((p, idx) => {
+    const hasText = p.text && p.text.length > 0;
+    const modBadge = modifiedPages.has(idx) ? '<span class="pg-modified">edited</span>' : '';
+    return `<div class="page-block" data-page-idx="${idx}">
+      <div class="page-block-header">
+        <span class="pg-label">Page ${p.page}</span>
+        <span class="pg-meta">${p.wordCount.toLocaleString('en-US')} words · ${p.charCount.toLocaleString('en-US')} chars</span>
+        ${confHtml(p, false)}
+        ${modBadge}${wordDiffHtml(idx)}
+        ${histBtnHtml(idx)}
+        ${hasText ? `<button class="copy-btn" onclick="copyPage(${p.page-1},this)">Copy</button>` : ''}
+      </div>
+      ${hasText
+        ? `<div class="page-text${fontMode==='mono'?' mono':''}" data-idx="${idx}">${editMode ? escapeHtml(p.text) : (q ? highlight(escapeHtml(p.text),q) : escapeHtml(p.text))}</div>`
+        : `<div class="page-empty">No text detected.</div>`}
+      ${noteHtml(idx, false)}
+    </div>`;
+  }).join('');
+  if (editMode) {
+    $('singleContent').querySelectorAll('.page-text[data-idx]').forEach(el => {
+      makeEditable(el, parseInt(el.dataset.idx));
+    });
+  }
+  if (!editMode) updateSearchCount(q);
+  updateNavButtons();
+}
+
+// ── Sync scroll ──
+function setupSyncScroll() {
+  const pdfPane  = $('pdfPane');
+  const textPane = $('textPane');
+  if (!pdfPane || !textPane) return;
+  const onScroll = (src, dst) => () => {
+    if (scrollLocked) return;
+    scrollLocked = true;
+    const ratio = src.scrollTop / (src.scrollHeight - src.clientHeight || 1);
+    dst.scrollTop = ratio * (dst.scrollHeight - dst.clientHeight);
+    requestAnimationFrame(() => { scrollLocked = false; });
+  };
+  if (pdfPane._sh)  pdfPane.removeEventListener('scroll',  pdfPane._sh);
+  if (textPane._sh) textPane.removeEventListener('scroll', textPane._sh);
+  pdfPane._sh  = onScroll(pdfPane,  textPane);
+  textPane._sh = onScroll(textPane, pdfPane);
+  pdfPane.addEventListener('scroll',  pdfPane._sh);
+  textPane.addEventListener('scroll', textPane._sh);
+}
+
+// ── Navigation ──
+function navPage(delta) {
+  if (!pagesText.length) return;
+  const next = Math.max(0, Math.min(pagesText.length - 1, currentPage + delta));
+  if (viewMode === 'sbs')    renderSbs(next);
+  else if (viewMode === 'pdf') { currentPage = next; renderPdfOnlyPage(next + 1); updateNavButtons(); }
+  else renderSinglePage(next);
+}
+
+function showAll() {
+  if (viewMode === 'pdf') return;   // no "all pages" in PDF-only view
+  showingAll = true;
+  if (viewMode === 'sbs') renderSbsAll(); else renderSingleAll();
+  updateNavButtons();
+}
+
+function updateNavButtons() {
+  const dis = showingAll || !pagesText.length;
+  $('btnFirst').disabled = dis || currentPage <= 0;
+  $('btnPrev').disabled  = dis || currentPage <= 0;
+  $('btnNext').disabled  = dis || currentPage >= pagesText.length - 1;
+  $('btnLast').disabled  = dis || currentPage >= pagesText.length - 1;
+}
+
+function setFont(mode) {
+  fontMode = mode;
+  $('fProp').classList.toggle('active', mode === 'prop');
+  $('fMono').classList.toggle('active', mode === 'mono');
+  if (viewMode === 'single') { if (showingAll) renderSingleAll(); else renderSinglePage(currentPage); }
+}
+
+// ── Copy ──
+async function copyPage(idx, btn) {
+  const text = pagesText[idx]?.text;
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); }
+  catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  btn.textContent = '✓ Copied'; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 2000);
+}
+
+// ── Search ──
+function onSearch() {
+  if (!pagesText.length || viewMode !== 'single') return;
+  if (showingAll) renderSingleAll(); else renderSinglePage(currentPage);
+  updateSearchCount($('searchInput').value.trim());
+}
+
+function updateSearchCount(q) {
+  const el = $('searchCount');
+  if (!q) { el.style.display = 'none'; return; }
+  const all = pagesText.map(p => p.text).join('\n');
+  const n = (all.match(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi')) || []).length;
+  el.style.display = ''; el.textContent = n + (n === 1 ? ' match' : ' matches');
+}
+
+function highlight(text, q) {
+  return text.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi'), m => `<mark>${m}</mark>`);
+}
+
+// ── Range picker ──
+
+// Parse "1-3, 5, 8-10" → sorted unique 0-based indices (clamped to valid pages)
+function parseRange(str) {
+  const total = pagesText.length;
+  if (!str.trim()) return null;   // null = all pages
+  const indices = new Set();
+  const parts = str.split(',');
+  for (const part of parts) {
+    const t = part.trim();
+    if (!t) continue;
+    const rangeMatch = t.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+    const singleMatch = t.match(/^(\d+)$/);
+    if (rangeMatch) {
+      const a = parseInt(rangeMatch[1]), b = parseInt(rangeMatch[2]);
+      if (isNaN(a) || isNaN(b) || a < 1 || b < a) return false;  // invalid
+      for (let i = a; i <= Math.min(b, total); i++) indices.add(i - 1);
+    } else if (singleMatch) {
+      const n = parseInt(singleMatch[1]);
+      if (n < 1 || n > total) return false;
+      indices.add(n - 1);
+    } else {
+      return false;  // unrecognised token
+    }
+  }
+  return indices.size ? [...indices].sort((a, b) => a - b) : false;
+}
+
+function rangeUpdate() {
+  const input   = $('rangeInput');
+  const preview = $('rangePreview');
+  const val     = input.value.trim();
+  const total   = pagesText.length;
+  if (!total) { preview.textContent = ''; return; }
+
+  if (!val) {
+    input.classList.remove('error');
+    preview.className = 'range-preview';
+    const words = pagesText.reduce((s, p) => s + p.wordCount, 0);
+    preview.textContent = `All ${total} pages · ${words.toLocaleString('en-US')} words`;
+    return;
+  }
+
+  const result = parseRange(val);
+  if (result === false) {
+    input.classList.add('error');
+    preview.className = 'range-preview err';
+    preview.textContent = '⚠ Invalid range — use e.g. 1-3, 5, 8-10';
+    return;
+  }
+
+  input.classList.remove('error');
+  const n     = result.length;
+  const words = result.reduce((s, i) => s + (pagesText[i]?.wordCount || 0), 0);
+  const emptyCount = result.filter(i => !pagesText[i]?.text?.trim()).length;
+
+  if (words === 0) {
+    preview.className = 'range-preview warn';
+    preview.textContent = `⚠ ${n} page${n !== 1 ? 's' : ''} selected — no text detected on any of them`;
+    return;
+  }
+
+  let msg = `${n} page${n !== 1 ? 's' : ''} · ${words.toLocaleString('en-US')} words`;
+  if (emptyCount > 0) msg += ` · ⚠ ${emptyCount} empty`;
+  preview.className = emptyCount > 0 ? 'range-preview warn' : 'range-preview ok';
+  preview.textContent = msg;
+}
+
+function rangeSelectAll() {
+  $('rangeInput').value = '';
+  rangeUpdate();
+}
+
+// Returns pages to export: either filtered subset or all
+function getPagesToExport() {
+  const val = $('rangeInput')?.value.trim() || '';
+  if (!val) return pagesText;
+  const indices = parseRange(val);
+  if (!indices) return pagesText;  // fallback to all on error
+  return indices.map(i => pagesText[i]).filter(Boolean);
+}
+
+// ── Download ──
+function downloadAs(fmt) {
+  if (!pagesText.length) return;
+  const pages = getPagesToExport();
+  if (!pages.length) { showError('No pages match the selected range.'); return; }
+
+  // Warn but don't block if all selected pages are empty
+  const hasAnyText = pages.some(p => p.text?.trim());
+  if (!hasAnyText) {
+    if (!confirm(`None of the ${pages.length} selected page${pages.length !== 1 ? 's have' : ' has'} extracted text. Export anyway?`)) return;
+  }
+  const base   = pdfFile ? pdfFile.name.replace(/\.pdf$/i, '') : 'document';
+  const now    = new Date().toLocaleDateString('en-US');
+  const isSubset = pages.length < pagesText.length;
+  const rangeTag = isSubset ? `_p${$('rangeInput').value.replace(/\s/g,'').replace(/,/g,'+')}` : '';
+  let content, mime, ext;
+
+  if (fmt === 'txt') {
+    const words = pages.reduce((s, p) => s + p.wordCount, 0);
+    content = `PDF EXTRACTOR — ${base}${isSubset ? ` (pages: ${$('rangeInput').value.trim()})` : ''}\n`
+      + `Date: ${now} · Pages: ${pages.length} · Words: ${words.toLocaleString('en-US')}\n`
+      + '─'.repeat(60) + '\n\n'
+      + pages.map(p => {
+          const conf = (p.isOCR && p.confidence !== null) ? ` · OCR ${p.confidence}%` : '';
+          const noteStr = p.note?.trim() ? `\n[NOTE: ${p.note.trim()}]` : '';
+          return `═══ PAGE ${p.page}${conf} ═══\n\n${p.text || '(no text)'}${noteStr}`;
+        }).join('\n\n\n');
+    mime = 'text/plain;charset=utf-8'; ext = 'txt';
+
+  } else if (fmt === 'md') {
+    const words = pages.reduce((s, p) => s + p.wordCount, 0);
+    content = `# ${base}\n\n`
+      + `> Extracted with VisionPDF · ${now} · ${pages.length} pages${isSubset ? ` (${$('rangeInput').value.trim()})` : ''}\n\n`
+      + pages.map(p => {
+          const conf = (p.isOCR && p.confidence !== null) ? ` *(OCR ${p.confidence}%)*` : '';
+          const noteStr = p.note?.trim() ? `\n\n> 📝 **Note:** ${p.note.trim()}` : '';
+          return `## Page ${p.page}${conf}\n\n${p.text || '_No text detected_'}${noteStr}`;
+        }).join('\n\n---\n\n');
+    mime = 'text/markdown;charset=utf-8'; ext = 'md';
+
+  } else {
+    const words = pages.reduce((s, p) => s + p.wordCount, 0);
+    const chars = pages.reduce((s, p) => s + p.charCount, 0);
+    content = JSON.stringify({
+      source: pdfFile?.name,
+      extractedAt: new Date().toISOString(),
+      exportedPages: isSubset ? $('rangeInput').value.trim() : 'all',
+      pages: pages.length,
+      usedOCR: pages.some(p => p.isOCR),
+      totalWords: words, totalChars: chars,
+      content: pages.map(p => ({
+        page: p.page, text: p.text,
+        words: p.wordCount, chars: p.charCount,
+        ocrConfidence: p.confidence ?? null,
+        note: p.note || null
+      }))
+    }, null, 2);
+    mime = 'application/json;charset=utf-8'; ext = 'json';
+  }
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = `${base}${rangeTag}_extracted.${ext}`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// ── Helpers ──
+function totalWords()   { return pagesText.reduce((s,p)=>s+p.wordCount,0); }
+function formatBytes(b) {
+  if (!b || isNaN(b) || b <= 0) return '—';
+  if (b > 1048576) return (b/1048576).toFixed(1) + ' MB';
+  if (b > 1024)    return (b/1024).toFixed(0) + ' KB';
+  return b + ' B';
+}
+function escapeHtml(t)  { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function setStep(n,s)   { const el=$('s-'+n); if(el) el.className='step '+s; }
+function setProgress(p,l){ $('progressFill').style.width=Math.min(p,100)+'%'; $('progressPct').textContent=Math.round(p)+'%'; if(l)$('progressLabel').textContent=l; }
+function log(m)         { $('progressLog').textContent=m; }
+function showError(m)   { $('errorBox').classList.add('visible'); $('errorMsg').textContent=m; }
+function hideError()    { $('errorBox').classList.remove('visible'); }
+
+function resetResults() {
+  pagesText=[]; currentPage=0; showingAll=false;
+  zoomLevel=1.0; zoomListenerAttached=false;
+  if($('zoomPct')) $('zoomPct').textContent='100%';
+  $('zoomBar').classList.remove('visible');
+  $('statsSection').style.display='none';
+  $('dlSection').style.display='none';
+  $('topbar').style.display='none';
+  $('panelSbs').style.display='none';
+  $('panelSingle').style.display='none';
+  $('progressBox').classList.remove('visible');
+  $('partialNotice').classList.remove('visible');
+  ['detect','extract','done'].forEach(s=>setStep(s,''));
+  setProgress(0,'Processing…'); log('—');
+  $('emptyState').style.display='';
+  $('pdfCanvasWrap').innerHTML='';
+  $('textPaneContent').innerHTML='';
+  $('singleContent').innerHTML='';
+}
+
+function resetAll() {
+  pdfFile=null; pdfDoc=null; isOCR=false; isProcessing=false; cancelFlag=false;
+  editMode=false; modifiedPages.clear(); pageHistory.clear(); noteOpenPages.clear();
+  thumbsVisible=false; thumbsRendered=false;
+  $('thumbRail').innerHTML=''; $('thumbRail').classList.remove('visible');
+  tocVisible=false; tocEntries=[]; tocActive=-1;
+  $('tocPanel').classList.remove('visible');
+  $('btnToc').style.display='none';
+  $('tocBody').innerHTML='<div class="toc-empty">Extract text to generate table of contents.</div>';
+  $('tocStats').textContent='';
+  $('panelPdfOnly').classList.remove('visible');
+  if ($('pdfCanvasWrapOnly')) $('pdfCanvasWrapOnly').innerHTML = '';
+  if ($('zoomBarOnly')) $('zoomBarOnly').classList.remove('visible');
+  if ($('rangeInput')) { $('rangeInput').value=''; $('rangeInput').classList.remove('error'); }
+  if ($('rangePreview')) $('rangePreview').textContent='';
+  fnrClose();
+  $('confTableWrap').classList.remove('visible');
+  $('confToggleBtn').classList.remove('visible');
+  fileInput.value='';
+  $('fileCard').classList.remove('visible');
+  $('pdfTypeBadge').style.display='none';
+  $('btnProcess').disabled=true;
+  $('btnCancel').style.display='none';
+  $('restoreBanner').classList.remove('visible');
+  const btn = $('btnEdit');
+  if (btn) { btn.classList.remove('active'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit`; }
+  $('editHint')?.classList.remove('visible');
+  clearSession();
+  hideError(); resetResults();
+}
+</script>
+</body>
+</html>
